@@ -54,7 +54,7 @@ export class FightScene extends Phaser.Scene {
     this.load.image(BACKGROUND_KEY, `${ASSET_BASE}sprites/backgrounds/background1.png`);
     this.load.image(DEREK_PORTRAIT_KEY, `${ASSET_BASE}derek-fight.png`);
     this.load.image(NAIGLE_PORTRAIT_KEY, `${ASSET_BASE}naigle-fight.png`);
-    this.load.audio(BATTLE_MUSIC_KEY, `${ASSET_BASE}battle-music.mp3`);
+    this.load.audio(BATTLE_MUSIC_KEY, `${ASSET_BASE}battle-music2.mp3`);
   }
 
   create() {
