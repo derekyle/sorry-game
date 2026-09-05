@@ -33,10 +33,13 @@ export class Player {
     this.sprite.play(idleAnimKey("down"), true);
   }
 
+  // Anchored to the tile's bottom edge (not its center) so the player's feet
+  // line up with the grass-fringe overlay and tall sprites drawn on that
+  // same bottom-edge convention (see TownScene).
   private tileToWorld(tile: TileCoord): { x: number; y: number } {
     return {
       x: tile.x * TILE_SIZE + TILE_SIZE / 2,
-      y: tile.y * TILE_SIZE + TILE_SIZE / 2,
+      y: (tile.y + 1) * TILE_SIZE,
     };
   }
 
