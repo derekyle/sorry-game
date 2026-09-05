@@ -35,6 +35,7 @@ import {
 } from "../game/Girl";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
+import { showLoadingOverlay, type LoadingOverlay } from "../ui/loadingOverlay";
 import { showDialog, type DialogNode, type ScreenPoint, type DialogSession } from "../ui/dialog";
 
 const GROUND_DEPTH = -1000;
@@ -72,12 +73,16 @@ export class TownScene extends Phaser.Scene {
   private nearGirl = false;
   private nearDerek = false;
   private derekRevealed = false;
+  private loadingOverlay: LoadingOverlay | null = null;
 
   constructor() {
     super("TownScene");
   }
 
   preload() {
+    this.loadingOverlay = showLoadingOverlay();
+    this.load.on(Phaser.Loader.Events.PROGRESS, (p: number) => this.loadingOverlay?.setProgress(p));
+
     generateTileTextures(this);
     this.load.spritesheet(PLAYER_WALK_SHEET, asset("character-walk.png"), {
       frameWidth: 32,
@@ -143,6 +148,9 @@ export class TownScene extends Phaser.Scene {
     // scene rather than restarting it, so the music needs an explicit
     // resume — it was paused, not stopped, when the fight began.
     this.events.on(Phaser.Scenes.Events.WAKE, () => this.music.resume());
+
+    this.loadingOverlay?.remove();
+    this.loadingOverlay = null;
   }
 
   update() {

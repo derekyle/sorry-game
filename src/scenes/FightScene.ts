@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { asset } from "../game/assets";
+import { showLoadingOverlay, type LoadingOverlay } from "../ui/loadingOverlay";
 import { showPixelSplash, type PixelSplashHandle } from "../ui/pixelSplash";
 
 const BACKGROUND_KEY = "fight-background";
@@ -133,6 +134,7 @@ export class FightScene extends Phaser.Scene {
   private turnLocked = false;
   private music: Phaser.Sound.BaseSound | null = null;
   private winSplash: PixelSplashHandle | null = null;
+  private loadingOverlay: LoadingOverlay | null = null;
 
   // Naigle sees at most two moves at once, drawn at random. Each move is
   // single-use within a round: when one is played it's dropped from the hand and
@@ -149,6 +151,9 @@ export class FightScene extends Phaser.Scene {
   }
 
   preload() {
+    this.loadingOverlay = showLoadingOverlay();
+    this.load.on(Phaser.Loader.Events.PROGRESS, (p: number) => this.loadingOverlay?.setProgress(p));
+
     this.load.image(BACKGROUND_KEY, asset("sprites/backgrounds/background1.png"));
     this.load.image(DEREK_PORTRAIT_KEY, asset("derek-fight.png"));
     this.load.image(NAIGLE_PORTRAIT_KEY, asset("naigle-fight.png"));
@@ -222,6 +227,9 @@ export class FightScene extends Phaser.Scene {
     this.redrawHealthBars();
 
     this.showMoveMenu();
+
+    this.loadingOverlay?.remove();
+    this.loadingOverlay = null;
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.closeMenu();
@@ -511,11 +519,10 @@ export class FightScene extends Phaser.Scene {
   private onNaigleWins() {
     this.clearNarration();
 
-    // Swap battle music for the victory track; it loops until the SHUTDOWN
-    // handler stops it on the way back to town.
+    // Swap battle music for the victory track; it plays through once.
     this.music?.stop();
     if (this.cache.audio.exists(VICTORY_MUSIC_KEY)) {
-      this.music = this.sound.add(VICTORY_MUSIC_KEY, { loop: true, volume: BATTLE_MUSIC_VOLUME });
+      this.music = this.sound.add(VICTORY_MUSIC_KEY, { loop: false, volume: BATTLE_MUSIC_VOLUME });
       this.music.play();
     }
 

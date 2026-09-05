@@ -111,6 +111,5 @@ export const PLAYER_START = { x: 11, y: 8 };
 // the grass fringe overlay doesn't cover his feet.
 export const NPC_HOME = { x: 22, y: 12 };
 
-// Top-middle of the map, between the two trees planted down column 11
-// (rows 1 and 4).
-export const GIRL_HOME = { x: 11, y: 2 };
+// Top-middle of the map, on open grass just east of the trees down column 11.
+export const GIRL_HOME = { x: 12, y: 3 };

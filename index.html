@@ -15,8 +15,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
     <title>Sorry Town</title>
+    <style>
+      /* Minimal styling so the boot loader looks right before the CSS bundle
+         loads (the full look, incl. the animation, is in src/style.css). */
+      body { margin: 0; background: #1a1a2e; }
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        background: #1a1a2e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-loader" class="loading-overlay">
+      <div class="loading-overlay__blocks"><span></span><span></span><span></span></div>
+      <div class="loading-overlay__track"><div class="loading-overlay__bar"></div></div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

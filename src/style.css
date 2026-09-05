@@ -33,6 +33,80 @@ body {
   image-rendering: pixelated;
 }
 
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: #1a1a2e;
+  transition: opacity 0.3s ease;
+}
+
+.loading-overlay--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-overlay__blocks {
+  display: flex;
+  gap: 10px;
+}
+
+.loading-overlay__blocks span {
+  width: 14px;
+  height: 14px;
+  background: #fdf6e6;
+  image-rendering: pixelated;
+  animation: loading-bounce 0.9s ease-in-out infinite;
+}
+
+.loading-overlay__blocks span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-overlay__blocks span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes loading-bounce {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  35% {
+    transform: translateY(-16px);
+    opacity: 1;
+  }
+}
+
+.loading-overlay__track {
+  width: min(60vw, 220px);
+  height: 6px;
+  background: rgba(253, 246, 230, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.loading-overlay__bar {
+  height: 100%;
+  width: 0%;
+  background: #fdf6e6;
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-overlay__blocks span {
+    animation: none;
+  }
+}
+
 .title-splash {
   position: fixed;
   inset: 0;
