@@ -1,35 +1,9 @@
+import { drawDissolveFrame } from "./pixelDissolve";
+
 export const TITLE_SPLASH_FADE_MS = 700;
 
 interface ShowTitleSplashOptions {
   onDismiss: () => void;
-}
-
-// Dissolves the splash by progressively downscaling it onto a hidden
-// low-res canvas and redrawing that unsmoothed at full size, so the
-// blocks get coarser as the image fades rather than blurring smoothly.
-function drawDissolveFrame(
-  ctx: CanvasRenderingContext2D,
-  tempCtx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  width: number,
-  height: number,
-  pixelScale: number,
-  alpha: number,
-) {
-  const tempCanvas = tempCtx.canvas;
-  const smallWidth = Math.max(1, Math.round(width * pixelScale));
-  const smallHeight = Math.max(1, Math.round(height * pixelScale));
-
-  tempCanvas.width = smallWidth;
-  tempCanvas.height = smallHeight;
-  tempCtx.imageSmoothingEnabled = true;
-  tempCtx.drawImage(image, 0, 0, smallWidth, smallHeight);
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.globalAlpha = alpha;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(tempCanvas, 0, 0, smallWidth, smallHeight, 0, 0, width, height);
-  ctx.globalAlpha = 1;
 }
 
 export function showTitleSplash(imageUrl: string, { onDismiss }: ShowTitleSplashOptions): void {

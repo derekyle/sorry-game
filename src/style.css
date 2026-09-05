@@ -48,6 +48,22 @@ body {
   image-rendering: pixelated;
 }
 
+.pixel-splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.45);
+  touch-action: none;
+}
+
+.pixel-splash canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
 .dialog-bubble {
   position: fixed;
   z-index: 20;
@@ -117,4 +133,43 @@ body {
 .dialog-bubble--player button:hover,
 .dialog-bubble--player button:active {
   background: #e8d9bd;
+}
+
+/* In the fight scene the choice menu is lifted clear of Naigle's health bar,
+   which runs along the very bottom edge. */
+.dialog-bubble--fight-menu {
+  bottom: 16%;
+}
+
+.dialog-bubble--menu-heading {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* The end-of-fight note, centered on screen. */
+.dialog-bubble--note {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(94vw, 640px);
+  max-width: min(94vw, 640px);
+  text-align: center;
+}
+
+.dialog-bubble--note p {
+  margin: 0;
+}
+
+.dialog-bubble--note .dialog-bubble--menu-heading {
+  margin-bottom: 6px;
+}
+
+/* Fight narration: a fixed bubble across the top of the screen. */
+.dialog-bubble--narration {
+  left: 50%;
+  top: 4%;
+  transform: translateX(-50%);
+  max-width: min(88vw, 460px);
+  text-align: center;
+  pointer-events: none;
 }

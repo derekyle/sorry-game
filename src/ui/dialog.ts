@@ -17,7 +17,11 @@ export interface DialogChoice {
 
 export interface DialogNode {
   npcMessage: string;
-  choices: DialogChoice[];
+  /**
+   * The player's replies. Omit (or leave empty) for a terminal node: the NPC
+   * says their line and the conversation closes on its own.
+   */
+  choices?: DialogChoice[];
 }
 
 export interface ShowDialogOptions {
@@ -86,7 +90,11 @@ export function showDialog(root: DialogNode, options: ShowDialogOptions = {}): D
       streamTimer = null;
     }
     npcText.textContent = activeNode.npcMessage;
-    setTimeout(() => showChoices(activeNode), CHOICES_DELAY_MS);
+    if (activeNode.choices && activeNode.choices.length > 0) {
+      setTimeout(() => showChoices(activeNode), CHOICES_DELAY_MS);
+    } else {
+      setTimeout(close, CHOICES_DELAY_MS);
+    }
   };
 
   // Clicking the NPC bubble while it's still streaming skips straight to the
@@ -98,7 +106,7 @@ export function showDialog(root: DialogNode, options: ShowDialogOptions = {}): D
   function showChoices(node: DialogNode) {
     playerMenu = document.createElement("div");
     playerMenu.className = "dialog-bubble dialog-bubble--player";
-    for (const choice of node.choices) {
+    for (const choice of node.choices ?? []) {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = choice.text;

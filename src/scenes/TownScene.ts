@@ -213,16 +213,29 @@ export class TownScene extends Phaser.Scene {
 
   private startGirlDialog() {
     const dialogRoot: DialogNode = {
-      npcMessage: "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?",
+      npcMessage: "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek? I saw him earlier, he seemed pretty sad.",
       choices: [
         { text: "Nope, don't know who that is, don't care." },
         {
           text: "Ya, where is he? I'm gonna beat him up.",
-          onSelect: () => this.revealDerek(),
           next: {
-            npcMessage:
-              "Well... hmm, he seemed pretty sad earlier, I saw him heading to the south east part of town.",
-            choices: [{ text: "Thanks." }],
+            npcMessage: "Oh, then I'm definitely not going to tell you!",
+            choices: [
+              { text: "Ok, fine." },
+              {
+                text: "You're a dummy bitch. Don't nobody want you, don't nobody need you!",
+                next: {
+                  npcMessage: "Alright, fine, I saw him in the southwest corner of town.",
+                  choices: [
+                    {
+                      text: "Don't you ever pull that shit again.",
+                      onSelect: () => this.revealDerek(),
+                     },
+
+                  ]
+                },
+              },
+            ],
           },
         },
       ],
