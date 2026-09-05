@@ -23,7 +23,7 @@ const PLAYER_CONTENT_HEIGHT_FRACTION = 19 / 32;
 const NPC_DISPLAY_SIZE = TILE_SIZE * (PLAYER_CONTENT_HEIGHT_FRACTION / NPC_CONTENT_HEIGHT_FRACTION);
 const NPC_ORIGIN_Y = 480 / 512;
 
-/** A stationary NPC that plays a walk-in-place animation, like a townsperson chatting. */
+/** A stationary NPC, standing at a fixed idle frame. */
 export class Npc {
   readonly sprite: Phaser.GameObjects.Sprite;
 
@@ -36,6 +36,5 @@ export class Npc {
     this.sprite = scene.add.sprite(x, y, NPC_SHEET, NPC_WALK_ROW * NPC_FRAMES_PER_ROW);
     this.sprite.setOrigin(0.5, NPC_ORIGIN_Y);
     this.sprite.setDisplaySize(NPC_DISPLAY_SIZE, NPC_DISPLAY_SIZE);
-    this.sprite.play(NPC_WALK_ANIM_KEY, true);
   }
 }

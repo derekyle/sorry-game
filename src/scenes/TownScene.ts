@@ -86,6 +86,7 @@ export class TownScene extends Phaser.Scene {
 
     this.npc = new Npc(this, NPC_HOME);
     this.npc.sprite.setDepth((NPC_HOME.y + 1) * TILE_SIZE);
+    this.npc.sprite.setVisible(false); // Hidden for now.
 
     const worldWidth = MAP_WIDTH * TILE_SIZE;
     const worldHeight = MAP_HEIGHT * TILE_SIZE;
