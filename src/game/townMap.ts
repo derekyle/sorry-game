@@ -101,9 +101,9 @@ export const houseAnchors: HouseAnchor[] = [
 
 export const townGrid: TileType[][] = buildGrid();
 
-// Middle of the main street, clear of every house's tall roof overhang
-// (houses A-D sit under columns 4-7 and 15-18) so the player spawns visible.
-export const PLAYER_START = { x: 11, y: 8 };
+// On the path directly in front of House C's door (bottom-left of the map).
+// The roof overhang rises above the footprint, so this tile below it is clear.
+export const PLAYER_START = { x: 5, y: 12 };
 
 // Open grass near the right edge of the map (column 22, one in from the
 // border trees at column 23), clear of the pond (columns 21-23, rows 2-4)
