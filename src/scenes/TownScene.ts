@@ -17,10 +17,10 @@ import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 const THEME_MUSIC_KEY = "town-theme";
-const THEME_MUSIC_VOLUME = 0.4;
+const THEME_MUSIC_VOLUME = 0.3;
 const FOOTSTEP_GRAVEL_KEY = "footstep-gravel";
 const FOOTSTEP_GRASS_KEY = "footstep-grass";
-const FOOTSTEP_VOLUME = 0.5;
+const FOOTSTEP_VOLUME = 0.65;
 
 const HOUSE_TEXTURE_KEYS: Record<HouseVariant, string> = {
   a: "house-a",
