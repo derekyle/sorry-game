@@ -1,9 +1,9 @@
-export const TILE_SIZE = 16;
+export const TILE_SIZE = 32;
 
 export const MAP_WIDTH = 24;
 export const MAP_HEIGHT = 18;
 
-export const CAMERA_ZOOM = 3;
+export const CAMERA_ZOOM = 2;
 
 export const MOVE_DURATION_MS = 170;
 
