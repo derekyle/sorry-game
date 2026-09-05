@@ -166,44 +166,10 @@ function drawWater(scene: Phaser.Scene) {
   finish(g, TILE_TEXTURE_KEYS[TileType.Water]);
 }
 
-export const GRASS_FRINGE_KEY = "tile-grass-fringe";
-
-const GRASS_TILES = new Set<TileType>([TileType.Grass, TileType.GrassAlt, TileType.Flower]);
-
-/** Whether standing on this tile should draw a grass-fringe overlay over the player's feet. */
-export function hasGrassFringe(tile: TileType): boolean {
-  return GRASS_TILES.has(tile);
-}
-
-/**
- * A row of jagged blade tips along the bottom edge of an otherwise
- * transparent tile. Drawn over the player (see TownScene depth-sorting) so
- * grass tiles read as having a little height instead of being flat ground.
- */
-function drawGrassFringe(scene: Phaser.Scene) {
-  const g = scene.add.graphics();
-  const blades: Array<[number, number]> = [
-    [0, 9],
-    [4, 6],
-    [8, 10],
-    [12, 7],
-    [16, 11],
-    [20, 6],
-    [24, 9],
-    [28, 7],
-  ];
-  for (const [x, height] of blades) {
-    rect(g, x, TILE_SIZE - height, 3, height, GRASS_DARK);
-    rect(g, x, TILE_SIZE - height, 3, 2, GRASS_LIGHT);
-  }
-  finish(g, GRASS_FRINGE_KEY);
-}
-
 export function generateTileTextures(scene: Phaser.Scene) {
   drawGrass(scene);
   drawGrassAlt(scene);
   drawFlower(scene);
   drawPath(scene);
   drawWater(scene);
-  drawGrassFringe(scene);
 }
