@@ -1,14 +1,14 @@
 import Phaser from "phaser";
+import { asset } from "../game/assets";
 import { showPixelSplash, type PixelSplashHandle } from "../ui/pixelSplash";
 
-const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 const BACKGROUND_KEY = "fight-background";
 const DEREK_PORTRAIT_KEY = "derek-fight-portrait";
 const NAIGLE_PORTRAIT_KEY = "naigle-fight-portrait";
 const BATTLE_MUSIC_KEY = "battle-music";
 const VICTORY_MUSIC_KEY = "victory-music";
 const BATTLE_MUSIC_VOLUME = 0.5;
-const WIN_SIGN_URL = `${ASSET_BASE}you-win-sign.png`;
+const WIN_SIGN_URL = asset("you-win-sign.png");
 const WIN_SIGN_HOLD_MS = 5000;
 
 const PORTRAIT_HEIGHT = 260;
@@ -149,11 +149,11 @@ export class FightScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image(BACKGROUND_KEY, `${ASSET_BASE}sprites/backgrounds/background1.png`);
-    this.load.image(DEREK_PORTRAIT_KEY, `${ASSET_BASE}derek-fight.png`);
-    this.load.image(NAIGLE_PORTRAIT_KEY, `${ASSET_BASE}naigle-fight.png`);
-    this.load.audio(BATTLE_MUSIC_KEY, `${ASSET_BASE}battle-music2.mp3`);
-    this.load.audio(VICTORY_MUSIC_KEY, `${ASSET_BASE}victory-music.mp3`);
+    this.load.image(BACKGROUND_KEY, asset("sprites/backgrounds/background1.png"));
+    this.load.image(DEREK_PORTRAIT_KEY, asset("derek-fight.png"));
+    this.load.image(NAIGLE_PORTRAIT_KEY, asset("naigle-fight.png"));
+    this.load.audio(BATTLE_MUSIC_KEY, asset("battle-music2.mp3"));
+    this.load.audio(VICTORY_MUSIC_KEY, asset("victory-music.mp3"));
     // The win sign is shown by the HTML pixel-splash overlay, which loads the
     // image itself — no Phaser texture needed.
   }
@@ -221,16 +221,7 @@ export class FightScene extends Phaser.Scene {
     this.naigleHealthBar = this.add.graphics();
     this.redrawHealthBars();
 
-    // Dev-only shortcut: /?win jumps straight to the victory splash so it can be
-    // inspected without playing out a whole fight.
-    if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("win")) {
-      this.derekHealth = 0;
-      this.redrawHealthBars();
-      this.knockOut(this.derekSprite);
-      this.onNaigleWins();
-    } else {
-      this.showMoveMenu();
-    }
+    this.showMoveMenu();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.closeMenu();

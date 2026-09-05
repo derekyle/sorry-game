@@ -29,21 +29,29 @@ export function showPixelSplash(imageUrl: string, { holdMs, onDone }: PixelSplas
 
   let rafId = 0;
   let holdTimer: ReturnType<typeof setTimeout> | null = null;
+  let watchdog: ReturnType<typeof setTimeout> | null = null;
   let done = false;
 
-  const teardown = () => {
+  const remove = () => {
     if (done) return;
     done = true;
     cancelAnimationFrame(rafId);
     if (holdTimer !== null) clearTimeout(holdTimer);
+    if (watchdog !== null) clearTimeout(watchdog);
     window.removeEventListener("resize", layout);
     overlay.remove();
   };
 
-  if (!ctx || !tempCtx) {
-    teardown();
+  // Called on any exit path except destroy(): tear down, then hand control back.
+  const finish = () => {
+    if (done) return;
+    remove();
     onDone?.();
-    return { destroy: () => {} };
+  };
+
+  if (!ctx || !tempCtx) {
+    finish();
+    return { destroy: remove };
   }
 
   const image = new Image();
@@ -57,8 +65,8 @@ export function showPixelSplash(imageUrl: string, { holdMs, onDone }: PixelSplas
       (window.innerHeight * 0.6) / image.naturalHeight,
       1,
     );
-    width = Math.round(image.naturalWidth * scale);
-    height = Math.round(image.naturalHeight * scale);
+    width = Math.max(1, Math.round(image.naturalWidth * scale));
+    height = Math.max(1, Math.round(image.naturalHeight * scale));
     canvas.width = width;
     canvas.height = height;
     canvas.style.width = `${width}px`;
@@ -74,7 +82,14 @@ export function showPixelSplash(imageUrl: string, { holdMs, onDone }: PixelSplas
       const t = Math.min(1, (now - start) / FADE_MS);
       const shown = fadingIn ? t : 1 - t;
       const eased = shown * shown;
-      drawDissolveFrame(ctx, tempCtx, image, width, height, pixelScaleFor(1 - eased), shown);
+      try {
+        drawDissolveFrame(ctx, tempCtx, image, width, height, pixelScaleFor(1 - eased), shown);
+      } catch (err) {
+        // A bad draw shouldn't strand the game on a frozen overlay.
+        console.error("pixel splash draw failed", err);
+        after();
+        return;
+      }
       if (t < 1) {
         rafId = requestAnimationFrame(step);
       } else {
@@ -91,13 +106,10 @@ export function showPixelSplash(imageUrl: string, { holdMs, onDone }: PixelSplas
       holdTimer = null;
     }
     overlay.removeEventListener("pointerdown", fadeOut);
-    runPhase(false, () => {
-      teardown();
-      onDone?.();
-    });
+    runPhase(false, finish);
   };
 
-  image.onload = () => {
+  const begin = () => {
     layout();
     runPhase(true, () => {
       if (done) return;
@@ -105,9 +117,19 @@ export function showPixelSplash(imageUrl: string, { holdMs, onDone }: PixelSplas
       holdTimer = setTimeout(fadeOut, holdMs);
     });
   };
+
+  image.onload = begin;
+  image.onerror = () => {
+    console.error("pixel splash image failed to load:", imageUrl);
+    finish();
+  };
   image.src = imageUrl;
 
   window.addEventListener("resize", layout);
 
-  return { destroy: teardown };
+  // Last-resort guarantee that the splash never outlives its natural length,
+  // even if the image never fires load/error or an animation frame is dropped.
+  watchdog = setTimeout(finish, FADE_MS * 2 + holdMs + 2000);
+
+  return { destroy: remove };
 }

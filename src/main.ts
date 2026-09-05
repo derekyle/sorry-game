@@ -1,4 +1,5 @@
 import "./style.css";
+import { asset } from "./game/assets";
 import { createGame } from "./game/createGame";
 import { showTitleSplash } from "./ui/titleSplash";
 import { TITLE_DISMISSED_EVENT } from "./game/events";
@@ -10,7 +11,6 @@ if (!container) {
 
 const game = createGame(container);
 
-const titleSignUrl = `${import.meta.env.BASE_URL}assets/derek-sorry-town-sign.png`;
-showTitleSplash(titleSignUrl, {
+showTitleSplash(asset("derek-sorry-town-sign.png"), {
   onDismiss: () => game.events.emit(TITLE_DISMISSED_EVENT),
 });

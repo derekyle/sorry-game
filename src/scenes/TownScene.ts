@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { asset } from "../game/assets";
 import { CAMERA_ZOOM, MAP_HEIGHT, MAP_WIDTH, TILE_SIZE, TileType } from "../game/config";
 import {
   idleAnimKey,
@@ -37,7 +38,6 @@ import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 import { showDialog, type DialogNode, type ScreenPoint, type DialogSession } from "../ui/dialog";
 
 const GROUND_DEPTH = -1000;
-const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 const THEME_MUSIC_KEY = "town-theme";
 const THEME_MUSIC_VOLUME = 0.3;
 const FOOTSTEP_GRAVEL_KEY = "footstep-gravel";
@@ -79,36 +79,36 @@ export class TownScene extends Phaser.Scene {
 
   preload() {
     generateTileTextures(this);
-    this.load.spritesheet(PLAYER_WALK_SHEET, `${ASSET_BASE}character-walk.png`, {
+    this.load.spritesheet(PLAYER_WALK_SHEET, asset("character-walk.png"), {
       frameWidth: 32,
       frameHeight: 32,
     });
-    this.load.spritesheet(PLAYER_IDLE_SHEET, `${ASSET_BASE}character-idle.png`, {
+    this.load.spritesheet(PLAYER_IDLE_SHEET, asset("character-idle.png"), {
       frameWidth: 32,
       frameHeight: 32,
     });
-    this.load.image("tree", `${ASSET_BASE}tree.png`);
-    this.load.image("house-a", `${ASSET_BASE}house-a.png`);
-    this.load.image("house-b", `${ASSET_BASE}house-b.png`);
-    this.load.spritesheet(NPC_WALK_SHEET, `${ASSET_BASE}derek-walk.png`, {
+    this.load.image("tree", asset("tree.png"));
+    this.load.image("house-a", asset("house-a.png"));
+    this.load.image("house-b", asset("house-b.png"));
+    this.load.spritesheet(NPC_WALK_SHEET, asset("derek-walk.png"), {
       frameWidth: 480,
       frameHeight: 480,
     });
-    this.load.spritesheet(NPC_IDLE_SHEET, `${ASSET_BASE}derek-idle.png`, {
+    this.load.spritesheet(NPC_IDLE_SHEET, asset("derek-idle.png"), {
       frameWidth: 597,
       frameHeight: 597,
     });
-    this.load.spritesheet(GIRL_WALK_SHEET, `${ASSET_BASE}girl-walk.png`, {
+    this.load.spritesheet(GIRL_WALK_SHEET, asset("girl-walk.png"), {
       frameWidth: 480,
       frameHeight: 480,
     });
-    this.load.spritesheet(GIRL_IDLE_SHEET, `${ASSET_BASE}girl-idle.png`, {
+    this.load.spritesheet(GIRL_IDLE_SHEET, asset("girl-idle.png"), {
       frameWidth: 597,
       frameHeight: 597,
     });
-    this.load.audio(THEME_MUSIC_KEY, `${ASSET_BASE}town-theme.mp3`);
-    this.load.audio(FOOTSTEP_GRAVEL_KEY, `${ASSET_BASE}footsteps-gravel.mp3`);
-    this.load.audio(FOOTSTEP_GRASS_KEY, `${ASSET_BASE}footsteps-grass.mp3`);
+    this.load.audio(THEME_MUSIC_KEY, asset("town-theme.mp3"));
+    this.load.audio(FOOTSTEP_GRAVEL_KEY, asset("footsteps-gravel.mp3"));
+    this.load.audio(FOOTSTEP_GRASS_KEY, asset("footsteps-grass.mp3"));
   }
 
   create() {
