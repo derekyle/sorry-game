@@ -107,8 +107,9 @@ export const PLAYER_START = { x: 11, y: 8 };
 
 // Open grass near the right edge of the map (column 22, one in from the
 // border trees at column 23), clear of the pond (columns 21-23, rows 2-4)
-// and the main street (row 8).
-export const NPC_HOME = { x: 22, y: 13 };
+// and the main street (row 8). One row further up than his first spot so
+// the grass fringe overlay doesn't cover his feet.
+export const NPC_HOME = { x: 22, y: 12 };
 
 // Top-middle of the map, between the two trees planted down column 11
 // (rows 1 and 4).

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { TownScene } from "../scenes/TownScene";
+import { FightScene } from "../scenes/FightScene";
 
 export function createGame(parent: HTMLElement): Phaser.Game {
   return new Phaser.Game({
@@ -12,6 +13,6 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [TownScene],
+    scene: [TownScene, FightScene],
   });
 }
