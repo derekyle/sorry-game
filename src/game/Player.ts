@@ -15,6 +15,12 @@ export function idleAnimKey(facing: PlayerFacing): string {
   return `idle-${facing}`;
 }
 
+// The player's sprite sheet draws its body a bit smaller within its 32x32
+// frame than Derek's and the girl's sheets draw theirs within their own
+// frames, so at matching frame-to-tile sizing the player reads slightly
+// smaller. Nudging it up a bit closes that gap.
+const PLAYER_SCALE = 1.1;
+
 /** Tile-grid character controller: walks a queued path one tile at a time. */
 export class Player {
   readonly sprite: Phaser.GameObjects.Sprite;
@@ -30,6 +36,7 @@ export class Player {
     const worldPos = this.tileToWorld(startTile);
     this.sprite = scene.add.sprite(worldPos.x, worldPos.y, PLAYER_IDLE_SHEET, 0);
     this.sprite.setOrigin(0.5, 0.81);
+    this.sprite.setScale(PLAYER_SCALE);
     this.sprite.play(idleAnimKey("down"), true);
   }
 
