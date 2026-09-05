@@ -11,6 +11,8 @@ import {
 import { findPath, isWalkable, type TileCoord } from "../game/pathfinding";
 import { generateTileTextures, GRASS_FRINGE_KEY, hasGrassFringe, textureKeyForTile } from "../game/textures";
 import { houseAnchors, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
+import { TITLE_DISMISSED_EVENT } from "../game/events";
+import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 
 const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
@@ -29,6 +31,7 @@ const HOUSE_TILE_WIDTH = 4;
 
 export class TownScene extends Phaser.Scene {
   private player!: Player;
+  private music!: Phaser.Sound.BaseSound;
 
   constructor() {
     super("TownScene");
@@ -74,17 +77,27 @@ export class TownScene extends Phaser.Scene {
   }
 
   private playThemeMusic() {
-    const music = this.sound.add(THEME_MUSIC_KEY, { loop: true, volume: THEME_MUSIC_VOLUME });
+    // Starts silent: the title splash controls when it becomes audible, by
+    // fading the volume in as it dismisses (see TITLE_DISMISSED_EVENT below).
+    this.music = this.sound.add(THEME_MUSIC_KEY, { loop: true, volume: 0 });
 
     // Browsers block audio until the user has interacted with the page, so
     // Phaser's sound manager may report "locked" at this point. Play
     // immediately when unlocked, otherwise wait for the unlock event that
     // fires on the first pointer/keyboard input.
     if (this.sound.locked) {
-      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => music.play());
+      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => this.music.play());
     } else {
-      music.play();
+      this.music.play();
     }
+
+    this.game.events.once(TITLE_DISMISSED_EVENT, () => {
+      this.tweens.add({
+        targets: this.music,
+        volume: THEME_MUSIC_VOLUME,
+        duration: TITLE_SPLASH_FADE_MS,
+      });
+    });
   }
 
   private createPlayerAnims() {
