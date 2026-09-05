@@ -60,21 +60,6 @@ type Sound = Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.
 // how far the roof rises above the footprint.
 const HOUSE_TILE_WIDTH = 4;
 
-const GIRL_DIALOG_ROOT: DialogNode = {
-  npcMessage: "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?",
-  choices: [
-    { text: "Nope, don't know who that is, don't care." },
-    {
-      text: "Ya, where is he? I'm gonna beat him up.",
-      next: {
-        npcMessage:
-          "Well... hmm, he seemed pretty sad earlier, I saw him heading to the south east part of town.",
-        choices: [{ text: "Thanks." }],
-      },
-    },
-  ],
-};
-
 export class TownScene extends Phaser.Scene {
   private player!: Player;
   private npc!: Npc;
@@ -85,6 +70,8 @@ export class TownScene extends Phaser.Scene {
   private activeFootstepSound: Sound | null = null;
   private dialogSession: DialogSession | null = null;
   private nearGirl = false;
+  private nearDerek = false;
+  private derekRevealed = false;
 
   constructor() {
     super("TownScene");
@@ -138,6 +125,7 @@ export class TownScene extends Phaser.Scene {
 
     this.npc = new Npc(this, NPC_HOME);
     this.npc.sprite.setDepth((NPC_HOME.y + 1) * TILE_SIZE);
+    this.npc.sprite.setVisible(false); // Hidden until the girl points the player at him.
 
     this.girl = new Girl(this, GIRL_HOME);
     this.girl.sprite.setDepth((GIRL_HOME.y + 1) * TILE_SIZE);
@@ -150,12 +138,52 @@ export class TownScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
 
     this.input.on("pointerdown", this.handleTap, this);
+
+    // Resuming from the fight scene (see updateDerekEncounter) wakes this
+    // scene rather than restarting it, so the music needs an explicit
+    // resume — it was paused, not stopped, when the fight began.
+    this.events.on(Phaser.Scenes.Events.WAKE, () => this.music.resume());
   }
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
     this.updateFootstepSound();
     this.updateGirlDialog();
+    this.updateDerekEncounter();
+  }
+
+  private revealDerek() {
+    this.derekRevealed = true;
+    this.npc.sprite.setVisible(true);
+  }
+
+  private updateDerekEncounter() {
+    if (!this.derekRevealed) return;
+
+    const dx = Math.abs(this.player.tile.x - NPC_HOME.x);
+    const dy = Math.abs(this.player.tile.y - NPC_HOME.y);
+    const adjacent = dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
+
+    // Edge-triggered: without this, the moment FightScene wakes this scene
+    // back up the player is still standing right next to Derek, and this
+    // would fire again immediately, bouncing straight back into the fight.
+    if (adjacent && !this.nearDerek && !this.dialogSession) {
+      this.music.pause();
+      this.footstepGravel.setVolume(0);
+      this.footstepGrass.setVolume(0);
+      this.activeFootstepSound = null;
+      // ScenePlugin.switch() queues the transition for the scene manager's
+      // next update, but that queue isn't getting flushed reliably here —
+      // going through the manager directly works and takes effect at once.
+      const manager = this.game.scene;
+      manager.sleep(this.scene.key);
+      if (manager.isSleeping("FightScene")) {
+        manager.wake("FightScene");
+      } else {
+        manager.start("FightScene");
+      }
+    }
+    this.nearDerek = adjacent;
   }
 
   private updateGirlDialog() {
@@ -184,7 +212,23 @@ export class TownScene extends Phaser.Scene {
   }
 
   private startGirlDialog() {
-    this.dialogSession = showDialog(GIRL_DIALOG_ROOT, {
+    const dialogRoot: DialogNode = {
+      npcMessage: "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?",
+      choices: [
+        { text: "Nope, don't know who that is, don't care." },
+        {
+          text: "Ya, where is he? I'm gonna beat him up.",
+          onSelect: () => this.revealDerek(),
+          next: {
+            npcMessage:
+              "Well... hmm, he seemed pretty sad earlier, I saw him heading to the south east part of town.",
+            choices: [{ text: "Thanks." }],
+          },
+        },
+      ],
+    };
+
+    this.dialogSession = showDialog(dialogRoot, {
       onCharacterRevealed: () => this.playDialogBlip(),
     });
   }
@@ -403,6 +447,7 @@ export class TownScene extends Phaser.Scene {
 
     if (!isWalkable(townGrid, targetTile.x, targetTile.y)) return;
     if (targetTile.x === GIRL_HOME.x && targetTile.y === GIRL_HOME.y) return;
+    if (this.derekRevealed && targetTile.x === NPC_HOME.x && targetTile.y === NPC_HOME.y) return;
 
     const path = findPath(townGrid, this.player.tile, targetTile);
     if (!path || path.length === 0) return;
