@@ -14,8 +14,9 @@ import { GIRL_HOME, houseAnchors, NPC_HOME, PLAYER_START, townGrid, type HouseVa
 import {
   Npc,
   npcIdleAnimKey,
-  npcRowForFacing,
+  npcIdleRowForFacing,
   npcWalkAnimKey,
+  npcWalkRowForFacing,
   NPC_IDLE_FRAMES_PER_ROW,
   NPC_IDLE_SHEET,
   NPC_WALK_FRAMES_PER_ROW,
@@ -228,21 +229,22 @@ export class TownScene extends Phaser.Scene {
     const facings: PlayerFacing[] = ["down", "up", "side"];
 
     for (const facing of facings) {
-      const row = npcRowForFacing(facing);
+      const walkRow = npcWalkRowForFacing(facing);
       this.anims.create({
         key: npcWalkAnimKey(facing),
         frames: this.anims.generateFrameNumbers(NPC_WALK_SHEET, {
-          start: row * NPC_WALK_FRAMES_PER_ROW,
-          end: row * NPC_WALK_FRAMES_PER_ROW + (NPC_WALK_FRAMES_PER_ROW - 1),
+          start: walkRow * NPC_WALK_FRAMES_PER_ROW,
+          end: walkRow * NPC_WALK_FRAMES_PER_ROW + (NPC_WALK_FRAMES_PER_ROW - 1),
         }),
         frameRate: 12,
         repeat: -1,
       });
+      const idleRow = npcIdleRowForFacing(facing);
       this.anims.create({
         key: npcIdleAnimKey(facing),
         frames: this.anims.generateFrameNumbers(NPC_IDLE_SHEET, {
-          start: row * NPC_IDLE_FRAMES_PER_ROW,
-          end: row * NPC_IDLE_FRAMES_PER_ROW + (NPC_IDLE_FRAMES_PER_ROW - 1),
+          start: idleRow * NPC_IDLE_FRAMES_PER_ROW,
+          end: idleRow * NPC_IDLE_FRAMES_PER_ROW + (NPC_IDLE_FRAMES_PER_ROW - 1),
         }),
         frameRate: 5,
         repeat: -1,
