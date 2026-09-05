@@ -47,3 +47,74 @@ body {
   display: block;
   image-rendering: pixelated;
 }
+
+.dialog-bubble {
+  position: fixed;
+  z-index: 20;
+  max-width: min(78vw, 320px);
+  min-width: 160px;
+  background: #fdf6e6;
+  color: #2b2118;
+  border: 3px solid #4a3324;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font: 15px/1.35 system-ui, sans-serif;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.dialog-bubble p {
+  margin: 0;
+  white-space: pre-wrap;
+  min-height: 1.35em;
+}
+
+/* Tracks the NPC's screen position every frame (see TownScene), so it's
+   anchored via left/top rather than CSS layout. A single rotated square,
+   colored and bordered to match the bubble, forms the downward tail. */
+.dialog-bubble--npc {
+  transform: translate(-50%, calc(-100% - 14px));
+}
+
+.dialog-bubble--npc::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  background: inherit;
+  border-right: 3px solid #4a3324;
+  border-bottom: 3px solid #4a3324;
+  border-radius: 0 0 3px 0;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* A fixed bottom-of-screen choice menu, not tied to the player's position —
+   he's necessarily right next to the NPC to trigger this, so a bubble
+   tracking him would frequently collide with (and get covered by) hers. */
+.dialog-bubble--player {
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dialog-bubble--player button {
+  font: inherit;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid #4a3324;
+  background: #fff9ef;
+  color: #2b2118;
+  cursor: pointer;
+}
+
+.dialog-bubble--player button:hover,
+.dialog-bubble--player button:active {
+  background: #e8d9bd;
+}
