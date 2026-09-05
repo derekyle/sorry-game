@@ -58,7 +58,7 @@ body {
   border: 3px solid #4a3324;
   border-radius: 14px;
   padding: 10px 14px;
-  font: 15px/1.35 system-ui, sans-serif;
+  font: 19px/1.4 "Patrick Hand", system-ui, sans-serif;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
   pointer-events: auto;
   touch-action: none;
