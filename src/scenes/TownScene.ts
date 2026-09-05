@@ -11,7 +11,7 @@ import {
 import { findPath, isWalkable, type TileCoord } from "../game/pathfinding";
 import { generateTileTextures, GRASS_FRINGE_KEY, hasGrassFringe, textureKeyForTile } from "../game/textures";
 import { houseAnchors, NPC_HOME, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
-import { npcWalkAnimKey, Npc, NPC_SHEET, type NpcFacing } from "../game/Npc";
+import { Npc, NPC_FRAMES_PER_ROW, NPC_SHEET, NPC_WALK_ANIM_KEY, NPC_WALK_ROW } from "../game/Npc";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 
@@ -99,7 +99,6 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
-    this.npc.sprite.setDepth(this.npc.sprite.y);
     this.updateFootstepSound();
   }
 
@@ -189,24 +188,15 @@ export class TownScene extends Phaser.Scene {
   }
 
   private createNpcAnims() {
-    const facings: Array<{ facing: NpcFacing; row: number }> = [
-      { facing: "down", row: 0 },
-      { facing: "left", row: 1 },
-      { facing: "right", row: 2 },
-      { facing: "up", row: 3 },
-    ];
-
-    for (const { facing, row } of facings) {
-      this.anims.create({
-        key: npcWalkAnimKey(facing),
-        frames: this.anims.generateFrameNumbers(NPC_SHEET, {
-          start: row * 4,
-          end: row * 4 + 3,
-        }),
-        frameRate: 8,
-        repeat: -1,
-      });
-    }
+    this.anims.create({
+      key: NPC_WALK_ANIM_KEY,
+      frames: this.anims.generateFrameNumbers(NPC_SHEET, {
+        start: NPC_WALK_ROW * NPC_FRAMES_PER_ROW,
+        end: NPC_WALK_ROW * NPC_FRAMES_PER_ROW + (NPC_FRAMES_PER_ROW - 1),
+      }),
+      frameRate: 8,
+      repeat: -1,
+    });
   }
 
   private buildMap() {
