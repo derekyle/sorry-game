@@ -80,7 +80,7 @@ export class TownScene extends Phaser.Scene {
     const marker = this.add.circle(
       tile.x * TILE_SIZE + TILE_SIZE / 2,
       tile.y * TILE_SIZE + TILE_SIZE / 2,
-      3,
+      5,
       0xffffff,
       0.8,
     );
