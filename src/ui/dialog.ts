@@ -9,14 +9,20 @@ export interface ScreenPoint {
 
 export interface DialogChoice {
   text: string;
+  /** Called when this choice is picked. */
+  onSelect?: () => void;
+  /** The next node to show, or omit to end the conversation. */
+  next?: DialogNode;
+}
+
+export interface DialogNode {
+  npcMessage: string;
+  choices: DialogChoice[];
 }
 
 export interface ShowDialogOptions {
-  npcMessage: string;
-  choices: DialogChoice[];
   /** Called once per revealed non-space character, for a text-blip sound. */
   onCharacterRevealed?: () => void;
-  onChoiceSelected?: (index: number) => void;
   /** Called once both bubbles have been removed from the page. */
   onClosed?: () => void;
 }
@@ -32,8 +38,8 @@ function positionBubble(bubble: HTMLDivElement, anchor: ScreenPoint) {
   bubble.style.top = `${anchor.y}px`;
 }
 
-export function showDialog(options: ShowDialogOptions): DialogSession {
-  const { npcMessage, choices, onCharacterRevealed, onChoiceSelected, onClosed } = options;
+export function showDialog(root: DialogNode, options: ShowDialogOptions = {}): DialogSession {
+  const { onCharacterRevealed, onClosed } = options;
 
   let active = true;
 
@@ -44,22 +50,32 @@ export function showDialog(options: ShowDialogOptions): DialogSession {
   document.body.appendChild(npcBubble);
 
   // The player's choices are a fixed bottom-of-screen menu rather than a
-  // bubble tracking his position: he's always adjacent to the NPC to trigger
-  // this at all, so a floating bubble at his position would frequently
+  // bubble tracking his position: he's necessarily adjacent to the NPC to
+  // trigger this at all, so a floating bubble there would frequently
   // collide with (and get covered by) hers.
   let playerMenu: HTMLDivElement | null = null;
 
+  let activeNode: DialogNode = root;
   let revealedCount = 0;
   let streamTimer: ReturnType<typeof setInterval> | null = null;
 
+  function runNode(node: DialogNode) {
+    playerMenu?.remove();
+    playerMenu = null;
+    activeNode = node;
+    revealedCount = 0;
+    npcText.textContent = "";
+    streamTimer = setInterval(revealNextChar, STREAM_INTERVAL_MS);
+  }
+
   const revealNextChar = () => {
     revealedCount += 1;
-    const ch = npcMessage[revealedCount - 1];
-    npcText.textContent = npcMessage.slice(0, revealedCount);
+    const ch = activeNode.npcMessage[revealedCount - 1];
+    npcText.textContent = activeNode.npcMessage.slice(0, revealedCount);
     if (ch && ch !== " ") {
       onCharacterRevealed?.();
     }
-    if (revealedCount >= npcMessage.length) {
+    if (revealedCount >= activeNode.npcMessage.length) {
       finishStreaming();
     }
   };
@@ -69,11 +85,9 @@ export function showDialog(options: ShowDialogOptions): DialogSession {
       clearInterval(streamTimer);
       streamTimer = null;
     }
-    npcText.textContent = npcMessage;
-    setTimeout(showChoices, CHOICES_DELAY_MS);
+    npcText.textContent = activeNode.npcMessage;
+    setTimeout(() => showChoices(activeNode), CHOICES_DELAY_MS);
   };
-
-  streamTimer = setInterval(revealNextChar, STREAM_INTERVAL_MS);
 
   // Clicking the NPC bubble while it's still streaming skips straight to the
   // full message, matching standard dialog-box UX.
@@ -81,17 +95,21 @@ export function showDialog(options: ShowDialogOptions): DialogSession {
     if (streamTimer !== null) finishStreaming();
   });
 
-  function showChoices() {
+  function showChoices(node: DialogNode) {
     playerMenu = document.createElement("div");
     playerMenu.className = "dialog-bubble dialog-bubble--player";
-    for (const [index, choice] of choices.entries()) {
+    for (const choice of node.choices) {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = choice.text;
       button.addEventListener("pointerdown", (event) => {
         event.stopPropagation();
-        onChoiceSelected?.(index);
-        close();
+        choice.onSelect?.();
+        if (choice.next) {
+          runNode(choice.next);
+        } else {
+          close();
+        }
       });
       playerMenu.appendChild(button);
     }
@@ -106,6 +124,8 @@ export function showDialog(options: ShowDialogOptions): DialogSession {
       onClosed?.();
     }, CLOSE_DELAY_MS);
   }
+
+  runNode(root);
 
   return {
     get active() {

@@ -34,7 +34,7 @@ import {
 } from "../game/Girl";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
-import { showDialog, type ScreenPoint, type DialogSession } from "../ui/dialog";
+import { showDialog, type DialogNode, type ScreenPoint, type DialogSession } from "../ui/dialog";
 
 const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
@@ -60,11 +60,20 @@ type Sound = Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.
 // how far the roof rises above the footprint.
 const HOUSE_TILE_WIDTH = 4;
 
-const GIRL_GREETING = "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?";
-const GIRL_GREETING_CHOICES = [
-  { text: "Nope, don't know who that is, don't care." },
-  { text: "Ya, where is he? I'm gonna beat him up." },
-];
+const GIRL_DIALOG_ROOT: DialogNode = {
+  npcMessage: "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?",
+  choices: [
+    { text: "Nope, don't know who that is, don't care." },
+    {
+      text: "Ya, where is he? I'm gonna beat him up.",
+      next: {
+        npcMessage:
+          "Well... hmm, he seemed pretty sad earlier, I saw him heading to the south east part of town.",
+        choices: [{ text: "Thanks." }],
+      },
+    },
+  ],
+};
 
 export class TownScene extends Phaser.Scene {
   private player!: Player;
@@ -175,9 +184,7 @@ export class TownScene extends Phaser.Scene {
   }
 
   private startGirlDialog() {
-    this.dialogSession = showDialog({
-      npcMessage: GIRL_GREETING,
-      choices: GIRL_GREETING_CHOICES,
+    this.dialogSession = showDialog(GIRL_DIALOG_ROOT, {
       onCharacterRevealed: () => this.playDialogBlip(),
     });
   }
