@@ -18,11 +18,19 @@ const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 const THEME_MUSIC_KEY = "town-theme";
 const THEME_MUSIC_VOLUME = 0.4;
+const FOOTSTEP_GRAVEL_KEY = "footstep-gravel";
+const FOOTSTEP_GRASS_KEY = "footstep-grass";
+const FOOTSTEP_VOLUME = 0.5;
 
 const HOUSE_TEXTURE_KEYS: Record<HouseVariant, string> = {
   a: "house-a",
   b: "house-b",
 };
+
+// this.sound.add() actually returns whichever concrete sound type matches
+// the active manager, and only those (not the BaseSound interface) declare
+// setVolume/volume — so anything that adjusts volume directly needs this.
+type Sound = Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.NoAudioSound;
 
 // Footprint is HOUSE_TILE_WIDTH x 3 tiles (see townMap.buildHouse); the
 // sprite is scaled to fill that width and its native aspect ratio decides
@@ -32,6 +40,9 @@ const HOUSE_TILE_WIDTH = 4;
 export class TownScene extends Phaser.Scene {
   private player!: Player;
   private music!: Phaser.Sound.BaseSound;
+  private footstepGravel!: Sound;
+  private footstepGrass!: Sound;
+  private activeFootstepSound: Sound | null = null;
 
   constructor() {
     super("TownScene");
@@ -51,6 +62,8 @@ export class TownScene extends Phaser.Scene {
     this.load.image("house-a", `${ASSET_BASE}house-a.png`);
     this.load.image("house-b", `${ASSET_BASE}house-b.png`);
     this.load.audio(THEME_MUSIC_KEY, `${ASSET_BASE}town-theme.mp3`);
+    this.load.audio(FOOTSTEP_GRAVEL_KEY, `${ASSET_BASE}footsteps-gravel.mp3`);
+    this.load.audio(FOOTSTEP_GRASS_KEY, `${ASSET_BASE}footsteps-grass.mp3`);
   }
 
   create() {
@@ -58,6 +71,7 @@ export class TownScene extends Phaser.Scene {
     this.buildMap();
     this.buildHouses();
     this.playThemeMusic();
+    this.setupFootsteps();
 
     this.player = new Player(this, PLAYER_START);
     this.player.sprite.setDepth((PLAYER_START.y + 1) * TILE_SIZE);
@@ -74,6 +88,7 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
+    this.updateFootstepSound();
   }
 
   private playThemeMusic() {
@@ -98,6 +113,37 @@ export class TownScene extends Phaser.Scene {
         duration: TITLE_SPLASH_FADE_MS,
       });
     });
+  }
+
+  private setupFootsteps() {
+    // Both loop continuously in the background at volume 0 so switching
+    // surfaces is just a volume swap, not a restart — no popping or
+    // playing from the start of the loop mid-stride.
+    this.footstepGravel = this.sound.add(FOOTSTEP_GRAVEL_KEY, { loop: true, volume: 0 });
+    this.footstepGrass = this.sound.add(FOOTSTEP_GRASS_KEY, { loop: true, volume: 0 });
+
+    const startLooping = () => {
+      this.footstepGravel.play();
+      this.footstepGrass.play();
+    };
+    if (this.sound.locked) {
+      this.sound.once(Phaser.Sound.Events.UNLOCKED, startLooping);
+    } else {
+      startLooping();
+    }
+  }
+
+  private footstepSoundForTile(tile: TileCoord): Sound {
+    return townGrid[tile.y][tile.x] === TileType.Path ? this.footstepGravel : this.footstepGrass;
+  }
+
+  private updateFootstepSound() {
+    const surfaceSound = this.player.isMoving ? this.footstepSoundForTile(this.player.tile) : null;
+    if (surfaceSound === this.activeFootstepSound) return;
+
+    this.activeFootstepSound?.setVolume(0);
+    surfaceSound?.setVolume(FOOTSTEP_VOLUME);
+    this.activeFootstepSound = surfaceSound;
   }
 
   private createPlayerAnims() {
