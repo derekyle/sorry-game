@@ -14,6 +14,8 @@ import { houseAnchors, PLAYER_START, townGrid, type HouseVariant } from "../game
 
 const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
+const THEME_MUSIC_KEY = "town-theme";
+const THEME_MUSIC_VOLUME = 0.4;
 
 const HOUSE_TEXTURE_KEYS: Record<HouseVariant, string> = {
   a: "house-a",
@@ -45,12 +47,14 @@ export class TownScene extends Phaser.Scene {
     this.load.image("tree", `${ASSET_BASE}tree.png`);
     this.load.image("house-a", `${ASSET_BASE}house-a.png`);
     this.load.image("house-b", `${ASSET_BASE}house-b.png`);
+    this.load.audio(THEME_MUSIC_KEY, `${ASSET_BASE}town-theme.mp3`);
   }
 
   create() {
     this.createPlayerAnims();
     this.buildMap();
     this.buildHouses();
+    this.playThemeMusic();
 
     this.player = new Player(this, PLAYER_START);
     this.player.sprite.setDepth((PLAYER_START.y + 1) * TILE_SIZE);
@@ -67,6 +71,20 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
+  }
+
+  private playThemeMusic() {
+    const music = this.sound.add(THEME_MUSIC_KEY, { loop: true, volume: THEME_MUSIC_VOLUME });
+
+    // Browsers block audio until the user has interacted with the page, so
+    // Phaser's sound manager may report "locked" at this point. Play
+    // immediately when unlocked, otherwise wait for the unlock event that
+    // fires on the first pointer/keyboard input.
+    if (this.sound.locked) {
+      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => music.play());
+    } else {
+      music.play();
+    }
   }
 
   private createPlayerAnims() {
