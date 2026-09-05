@@ -101,4 +101,6 @@ export const houseAnchors: HouseAnchor[] = [
 
 export const townGrid: TileType[][] = buildGrid();
 
-export const PLAYER_START = { x: 6, y: 8 };
+// Middle of the main street, clear of every house's tall roof overhang
+// (houses A-D sit under columns 4-7 and 15-18) so the player spawns visible.
+export const PLAYER_START = { x: 11, y: 8 };

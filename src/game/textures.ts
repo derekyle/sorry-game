@@ -166,10 +166,58 @@ function drawWater(scene: Phaser.Scene) {
   finish(g, TILE_TEXTURE_KEYS[TileType.Water]);
 }
 
+export const GRASS_FRINGE_KEY = "tile-grass-fringe";
+
+const GRASS_TILES = new Set<TileType>([TileType.Grass, TileType.GrassAlt, TileType.Flower]);
+const FRINGE_COVERAGE = 0.1;
+
+/** Cheap deterministic hash so the same tile always gets the same answer. */
+function hash2(x: number, y: number): number {
+  let h = x * 374761393 + y * 668265263;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  h = h ^ (h >>> 16);
+  return (h >>> 0) / 0xffffffff;
+}
+
+/**
+ * Whether this tile should draw a grass-fringe overlay over the player's
+ * feet. Only a scattered ~10% of grass tiles get it, so it reads as patches
+ * of taller grass rather than a uniform (and rather mechanical-looking)
+ * texture across the whole map.
+ */
+export function hasGrassFringe(tile: TileType, x: number, y: number): boolean {
+  return GRASS_TILES.has(tile) && hash2(x, y) < FRINGE_COVERAGE;
+}
+
+/**
+ * A row of jagged blade tips along the bottom edge of an otherwise
+ * transparent tile. Drawn over the player (see TownScene depth-sorting) so
+ * grass tiles read as having a little height instead of being flat ground.
+ */
+function drawGrassFringe(scene: Phaser.Scene) {
+  const g = scene.add.graphics();
+  const blades: Array<[number, number]> = [
+    [0, 9],
+    [4, 6],
+    [8, 10],
+    [12, 7],
+    [16, 11],
+    [20, 6],
+    [24, 9],
+    [28, 7],
+  ];
+  for (const [x, height] of blades) {
+    rect(g, x, TILE_SIZE - height, 3, height, GRASS_DARK);
+    rect(g, x, TILE_SIZE - height, 3, 2, GRASS_LIGHT);
+  }
+  finish(g, GRASS_FRINGE_KEY);
+}
+
 export function generateTileTextures(scene: Phaser.Scene) {
   drawGrass(scene);
   drawGrassAlt(scene);
   drawFlower(scene);
   drawPath(scene);
   drawWater(scene);
+  drawGrassFringe(scene);
 }
