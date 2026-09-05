@@ -10,7 +10,8 @@ import {
 } from "../game/Player";
 import { findPath, isWalkable, type TileCoord } from "../game/pathfinding";
 import { generateTileTextures, GRASS_FRINGE_KEY, hasGrassFringe, textureKeyForTile } from "../game/textures";
-import { houseAnchors, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
+import { houseAnchors, NPC_HOME, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
+import { npcWalkAnimKey, Npc, NPC_SHEET, type NpcFacing } from "../game/Npc";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 
@@ -20,7 +21,8 @@ const THEME_MUSIC_KEY = "town-theme";
 const THEME_MUSIC_VOLUME = 0.3;
 const FOOTSTEP_GRAVEL_KEY = "footstep-gravel";
 const FOOTSTEP_GRASS_KEY = "footstep-grass";
-const FOOTSTEP_VOLUME = 0.65;
+const FOOTSTEP_GRAVEL_VOLUME = 0.65;
+const FOOTSTEP_GRASS_VOLUME = FOOTSTEP_GRAVEL_VOLUME * 1.25;
 
 const HOUSE_TEXTURE_KEYS: Record<HouseVariant, string> = {
   a: "house-a",
@@ -39,6 +41,7 @@ const HOUSE_TILE_WIDTH = 4;
 
 export class TownScene extends Phaser.Scene {
   private player!: Player;
+  private npc!: Npc;
   private music!: Phaser.Sound.BaseSound;
   private footstepGravel!: Sound;
   private footstepGrass!: Sound;
@@ -61,6 +64,10 @@ export class TownScene extends Phaser.Scene {
     this.load.image("tree", `${ASSET_BASE}tree.png`);
     this.load.image("house-a", `${ASSET_BASE}house-a.png`);
     this.load.image("house-b", `${ASSET_BASE}house-b.png`);
+    this.load.spritesheet(NPC_SHEET, `${ASSET_BASE}derek-sprite.png`, {
+      frameWidth: 512,
+      frameHeight: 512,
+    });
     this.load.audio(THEME_MUSIC_KEY, `${ASSET_BASE}town-theme.mp3`);
     this.load.audio(FOOTSTEP_GRAVEL_KEY, `${ASSET_BASE}footsteps-gravel.mp3`);
     this.load.audio(FOOTSTEP_GRASS_KEY, `${ASSET_BASE}footsteps-grass.mp3`);
@@ -68,6 +75,7 @@ export class TownScene extends Phaser.Scene {
 
   create() {
     this.createPlayerAnims();
+    this.createNpcAnims();
     this.buildMap();
     this.buildHouses();
     this.playThemeMusic();
@@ -75,6 +83,9 @@ export class TownScene extends Phaser.Scene {
 
     this.player = new Player(this, PLAYER_START);
     this.player.sprite.setDepth((PLAYER_START.y + 1) * TILE_SIZE);
+
+    this.npc = new Npc(this, NPC_HOME);
+    this.npc.sprite.setDepth((NPC_HOME.y + 1) * TILE_SIZE);
 
     const worldWidth = MAP_WIDTH * TILE_SIZE;
     const worldHeight = MAP_HEIGHT * TILE_SIZE;
@@ -88,6 +99,7 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
+    this.npc.sprite.setDepth(this.npc.sprite.y);
     this.updateFootstepSound();
   }
 
@@ -142,7 +154,8 @@ export class TownScene extends Phaser.Scene {
     if (surfaceSound === this.activeFootstepSound) return;
 
     this.activeFootstepSound?.setVolume(0);
-    surfaceSound?.setVolume(FOOTSTEP_VOLUME);
+    const volume = surfaceSound === this.footstepGravel ? FOOTSTEP_GRAVEL_VOLUME : FOOTSTEP_GRASS_VOLUME;
+    surfaceSound?.setVolume(volume);
     this.activeFootstepSound = surfaceSound;
   }
 
@@ -170,6 +183,27 @@ export class TownScene extends Phaser.Scene {
           end: row * 4 + 3,
         }),
         frameRate: 5,
+        repeat: -1,
+      });
+    }
+  }
+
+  private createNpcAnims() {
+    const facings: Array<{ facing: NpcFacing; row: number }> = [
+      { facing: "down", row: 0 },
+      { facing: "left", row: 1 },
+      { facing: "right", row: 2 },
+      { facing: "up", row: 3 },
+    ];
+
+    for (const { facing, row } of facings) {
+      this.anims.create({
+        key: npcWalkAnimKey(facing),
+        frames: this.anims.generateFrameNumbers(NPC_SHEET, {
+          start: row * 4,
+          end: row * 4 + 3,
+        }),
+        frameRate: 8,
         repeat: -1,
       });
     }
