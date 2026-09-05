@@ -17,10 +17,22 @@ function fillRect(
   }
 }
 
+export type HouseVariant = "a" | "b";
+
+export interface HouseAnchor {
+  x0: number;
+  y0: number;
+  variant: HouseVariant;
+}
+
+/**
+ * Marks a 4-wide x 3-tall footprint as impassable (door cells excepted). The
+ * actual roof/wall art is a single overlaid sprite drawn by TownScene — the
+ * grid only needs to know what's walkable, so every non-door cell here is
+ * just TileType.Wall regardless of whether it's visually "roof" or "wall".
+ */
 function buildHouse(grid: TileType[][], x0: number, y0: number) {
-  // 4x2 roof with a 4x2 wall row below it, door in the middle of the wall row.
-  fillRect(grid, x0, y0, 4, 2, TileType.Roof);
-  fillRect(grid, x0, y0 + 2, 4, 1, TileType.Wall);
+  fillRect(grid, x0, y0, 4, 3, TileType.Wall);
   grid[y0 + 2][x0 + 1] = TileType.Door;
   grid[y0 + 2][x0 + 2] = TileType.Door;
 }
@@ -73,13 +85,19 @@ function buildGrid(): TileType[][] {
   fillRect(grid, 16, 9, 1, 6, TileType.Path); // branch down to house D
 
   // Houses, each fronted by a path tile so the door is reachable.
-  buildHouse(grid, 4, 1); // House A (top-left)
-  buildHouse(grid, 15, 1); // House B (top-right)
-  buildHouse(grid, 4, 9); // House C (bottom-left)
-  buildHouse(grid, 15, 9); // House D (bottom-right)
+  for (const house of houseAnchors) {
+    buildHouse(grid, house.x0, house.y0);
+  }
 
   return grid;
 }
+
+export const houseAnchors: HouseAnchor[] = [
+  { x0: 4, y0: 1, variant: "a" }, // House A (top-left)
+  { x0: 15, y0: 1, variant: "b" }, // House B (top-right)
+  { x0: 4, y0: 9, variant: "b" }, // House C (bottom-left)
+  { x0: 15, y0: 9, variant: "a" }, // House D (bottom-right)
+];
 
 export const townGrid: TileType[][] = buildGrid();
 

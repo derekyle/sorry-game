@@ -13,9 +13,10 @@ walkable and your character pathfinds and walks there, tile by tile.
   movement, pointer/touch input) and ships a small, fast static bundle —
   a good fit for GitHub Pages.
 - **[Vite](https://vitejs.dev/)** + **TypeScript** — dev server and bundler.
-- No external art assets: the pixel art (tiles + character) is generated at
-  runtime from `Phaser.Graphics`, so there's nothing to author in an image
-  editor to get started — see `src/game/textures.ts`.
+- Ground tiles (grass, path, water) are generated at runtime from
+  `Phaser.Graphics` — see `src/game/textures.ts`. The character, trees, and
+  houses are real sprites from a third-party asset pack — see
+  `CREDITS.md` for attribution.
 
 ## Project layout
 
@@ -23,15 +24,17 @@ walkable and your character pathfinds and walks there, tile by tile.
 src/
   game/
     config.ts        tile size, map size, tile type enum, movement tuning
-    townMap.ts        the town's tile grid layout
-    textures.ts       procedural pixel art (tiles + player walk frames)
+    townMap.ts        the town's tile grid layout + house placements
+    textures.ts       procedural pixel art for ground tiles
     pathfinding.ts    grid BFS used for tap-to-move
-    Player.ts         tile-by-tile movement/animation controller
+    Player.ts         tile-by-tile movement + sprite animation controller
     createGame.ts      Phaser game bootstrap
   scenes/
     TownScene.ts       builds the map, player, camera, and tap input
   main.ts
   style.css            mobile-first full-viewport styling
+public/
+  assets/              character, tree, and house sprites (see CREDITS.md)
 ```
 
 ## Getting started
