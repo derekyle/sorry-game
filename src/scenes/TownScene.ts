@@ -113,7 +113,7 @@ export class TownScene extends Phaser.Scene {
           tree.setDepth((y + 1) * TILE_SIZE);
         }
 
-        if (hasGrassFringe(tile)) {
+        if (hasGrassFringe(tile, x, y)) {
           // Depth is the tile's bottom edge plus a hair, so a player
           // standing exactly on this tile (whose depth is also that bottom
           // edge, per Player's tile-bottom anchor) reliably renders behind

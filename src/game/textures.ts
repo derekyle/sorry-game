@@ -169,10 +169,24 @@ function drawWater(scene: Phaser.Scene) {
 export const GRASS_FRINGE_KEY = "tile-grass-fringe";
 
 const GRASS_TILES = new Set<TileType>([TileType.Grass, TileType.GrassAlt, TileType.Flower]);
+const FRINGE_COVERAGE = 0.1;
 
-/** Whether standing on this tile should draw a grass-fringe overlay over the player's feet. */
-export function hasGrassFringe(tile: TileType): boolean {
-  return GRASS_TILES.has(tile);
+/** Cheap deterministic hash so the same tile always gets the same answer. */
+function hash2(x: number, y: number): number {
+  let h = x * 374761393 + y * 668265263;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  h = h ^ (h >>> 16);
+  return (h >>> 0) / 0xffffffff;
+}
+
+/**
+ * Whether this tile should draw a grass-fringe overlay over the player's
+ * feet. Only a scattered ~10% of grass tiles get it, so it reads as patches
+ * of taller grass rather than a uniform (and rather mechanical-looking)
+ * texture across the whole map.
+ */
+export function hasGrassFringe(tile: TileType, x: number, y: number): boolean {
+  return GRASS_TILES.has(tile) && hash2(x, y) < FRINGE_COVERAGE;
 }
 
 /**
