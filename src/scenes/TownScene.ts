@@ -136,7 +136,6 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
-    this.npc.sprite.setDepth(this.npc.sprite.y);
     this.updateFootstepSound();
   }
 
