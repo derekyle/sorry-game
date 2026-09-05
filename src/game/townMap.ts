@@ -105,11 +105,11 @@ export const townGrid: TileType[][] = buildGrid();
 // (houses A-D sit under columns 4-7 and 15-18) so the player spawns visible.
 export const PLAYER_START = { x: 11, y: 8 };
 
-// Open grass south of the main street, clear of every house footprint
-// (houses C/D sit under columns 4-7 and 15-18, rows 9-11) and of the path
-// branches at columns 5 and 16.
-export const NPC_HOME = { x: 9, y: 12 };
+// Open grass near the right edge of the map (column 22, one in from the
+// border trees at column 23), clear of the pond (columns 21-23, rows 2-4)
+// and the main street (row 8).
+export const NPC_HOME = { x: 22, y: 13 };
 
-// Middle of the map, one row south of the main street and clear of every
-// house, tree, and path tile.
-export const GIRL_HOME = { x: 12, y: 9 };
+// Top-middle of the map, between the two trees planted down column 11
+// (rows 1 and 4).
+export const GIRL_HOME = { x: 11, y: 2 };
