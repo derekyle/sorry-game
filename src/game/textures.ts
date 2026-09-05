@@ -1,30 +1,22 @@
 import Phaser from "phaser";
 import { TILE_SIZE, TileType } from "./config";
 
+// Tree/Wall/Roof/Door tiles are covered by real sprite art drawn on top
+// (see TownScene) — their grid texture only needs to look like plain ground.
 const TILE_TEXTURE_KEYS: Record<TileType, string> = {
   [TileType.Grass]: "tile-grass",
   [TileType.GrassAlt]: "tile-grass-alt",
   [TileType.Flower]: "tile-flower",
   [TileType.Path]: "tile-path",
-  [TileType.Tree]: "tile-tree",
+  [TileType.Tree]: "tile-grass",
   [TileType.Water]: "tile-water",
-  [TileType.Wall]: "tile-wall",
-  [TileType.Roof]: "tile-roof",
-  [TileType.Door]: "tile-door",
+  [TileType.Wall]: "tile-grass",
+  [TileType.Roof]: "tile-grass",
+  [TileType.Door]: "tile-path",
 };
 
 export function textureKeyForTile(tile: TileType): string {
   return TILE_TEXTURE_KEYS[tile];
-}
-
-const INK = 0x2b2013;
-
-interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  color: number;
 }
 
 function rect(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, color: number) {
@@ -33,13 +25,6 @@ function rect(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h
 
 function px(g: Phaser.GameObjects.Graphics, x: number, y: number, color: number) {
   g.fillStyle(color, 1).fillRect(x, y, 1, 1);
-}
-
-/** Draws each box inflated by 1px in black first, then the true box on top —
- * a cheap way to get a clean outline around a silhouette built from rects. */
-function drawOutlined(g: Phaser.GameObjects.Graphics, boxes: Box[], outline = INK) {
-  for (const b of boxes) rect(g, b.x - 1, b.y - 1, b.w + 2, b.h + 2, outline);
-  for (const b of boxes) rect(g, b.x, b.y, b.w, b.h, b.color);
 }
 
 function finish(g: Phaser.GameObjects.Graphics, key: string) {
@@ -181,178 +166,10 @@ function drawWater(scene: Phaser.Scene) {
   finish(g, TILE_TEXTURE_KEYS[TileType.Water]);
 }
 
-function drawTree(scene: Phaser.Scene) {
-  const g = scene.add.graphics();
-  rect(g, 0, 0, TILE_SIZE, TILE_SIZE, GRASS_BASE);
-  drawGrassTufts(g);
-
-  const trunk = 0x6b4326;
-  const trunkDark = 0x4d2f19;
-  const canopyBoxes: Box[] = [
-    { x: 10, y: 0, w: 12, h: 2, color: 0x2b8a45 },
-    { x: 6, y: 2, w: 20, h: 4, color: 0x2b8a45 },
-    { x: 3, y: 6, w: 26, h: 9, color: 0x2b8a45 },
-    { x: 5, y: 15, w: 22, h: 6, color: 0x2b8a45 },
-    { x: 8, y: 21, w: 16, h: 4, color: 0x2b8a45 },
-  ];
-  drawOutlined(g, canopyBoxes);
-
-  rect(g, 13, 22, 6, 8, trunk);
-  rect(g, 13, 22, 2, 8, trunkDark);
-
-  const highlight = 0x49b868;
-  rect(g, 7, 8, 7, 6, highlight);
-  const shadowLeaf = 0x1e6f37;
-  rect(g, 18, 16, 7, 5, shadowLeaf);
-  finish(g, TILE_TEXTURE_KEYS[TileType.Tree]);
-}
-
-const WALL_BASE = 0xefe0b0;
-const WALL_TRIM = 0x7a5330;
-const WALL_LINE = 0xd6bd85;
-
-function drawWall(scene: Phaser.Scene) {
-  const g = scene.add.graphics();
-  rect(g, 0, 0, TILE_SIZE, TILE_SIZE, WALL_BASE);
-  rect(g, 0, 0, TILE_SIZE, 2, WALL_TRIM);
-  rect(g, 0, 0, 3, TILE_SIZE, WALL_TRIM);
-  rect(g, TILE_SIZE - 3, 0, 3, TILE_SIZE, WALL_TRIM);
-  rect(g, 3, 11, TILE_SIZE - 6, 2, WALL_LINE);
-  rect(g, 3, 22, TILE_SIZE - 6, 2, WALL_LINE);
-
-  // small shuttered window
-  drawOutlined(g, [{ x: 11, y: 13, w: 10, h: 8, color: 0x5b8fd6 }]);
-  rect(g, 15, 13, 2, 8, WALL_TRIM);
-  rect(g, 11, 16, 10, 2, WALL_TRIM);
-  finish(g, TILE_TEXTURE_KEYS[TileType.Wall]);
-}
-
-function drawRoof(scene: Phaser.Scene) {
-  const g = scene.add.graphics();
-  const base = 0xc23b3b;
-  const ridge = 0xe06666;
-  const shingle = 0x8e2a2a;
-  rect(g, 0, 0, TILE_SIZE, TILE_SIZE, base);
-  rect(g, 0, 0, TILE_SIZE, 2, ridge);
-  for (const y of [6, 13, 20, 27]) {
-    rect(g, 0, y, TILE_SIZE, 2, shingle);
-  }
-  for (let x = 0; x < TILE_SIZE; x += 8) {
-    rect(g, x, 6, 1, 2, ridge);
-    rect(g, x + 4, 20, 1, 2, ridge);
-  }
-  finish(g, TILE_TEXTURE_KEYS[TileType.Roof]);
-}
-
-function drawDoor(scene: Phaser.Scene) {
-  const g = scene.add.graphics();
-  rect(g, 0, 0, TILE_SIZE, TILE_SIZE, WALL_BASE);
-  rect(g, 0, 0, TILE_SIZE, 2, WALL_TRIM);
-  drawOutlined(g, [{ x: 6, y: 5, w: 20, h: 27, color: 0x5a3822 }]);
-  rect(g, 15, 5, 2, 27, 0x432714);
-  rect(g, 6, 5, 20, 3, 0x6b4429);
-  px(g, 20, 19, 0xf1c453);
-  px(g, 19, 19, 0xc9922f);
-  finish(g, TILE_TEXTURE_KEYS[TileType.Door]);
-}
-
 export function generateTileTextures(scene: Phaser.Scene) {
   drawGrass(scene);
   drawGrassAlt(scene);
   drawFlower(scene);
   drawPath(scene);
   drawWater(scene);
-  drawTree(scene);
-  drawWall(scene);
-  drawRoof(scene);
-  drawDoor(scene);
-}
-
-const CAP = 0xe8443c;
-const CAP_DARK = 0xb52e28;
-const CAP_BILL = 0x8f231f;
-const SKIN = 0xffd8ab;
-const SKIN_SHADE = 0xf0b986;
-const HAIR_BACK = 0x5b3a29;
-const SHIRT = 0x4a7fe0;
-const SHIRT_DARK = 0x3560b8;
-const SHIRT_LIGHT = 0x6fa0f2;
-const PANTS = 0x2a3a63;
-const PANTS_DARK = 0x1c2747;
-const SHOE = 0x3a2a1e;
-const EYE = 0x241a12;
-
-export type PlayerFacing = "down" | "up" | "side";
-
-export function playerTextureKey(facing: PlayerFacing, phase: 0 | 1): string {
-  return `player-${facing}-${phase}`;
-}
-
-function drawPlayerFrame(scene: Phaser.Scene, facing: PlayerFacing, phase: 0 | 1) {
-  const g = scene.add.graphics();
-
-  // ground shadow, drawn first so the outlined body sits on top of it
-  g.fillStyle(0x000000, 0.28).fillEllipse(16, 29, 16, 6);
-
-  const bodyBoxes: Box[] = [
-    { x: 9, y: 12, w: 14, h: 9, color: SHIRT },
-    { x: 11, y: 19, w: 10, h: 6, color: PANTS },
-  ];
-
-  if (facing === "down") {
-    bodyBoxes.push(
-      { x: 10, y: 1, w: 12, h: 3, color: CAP },
-      { x: 8, y: 3, w: 16, h: 2, color: CAP_BILL },
-      { x: 9, y: 5, w: 14, h: 7, color: SKIN },
-    );
-  } else if (facing === "up") {
-    bodyBoxes.push(
-      { x: 10, y: 1, w: 12, h: 4, color: CAP },
-      { x: 9, y: 5, w: 14, h: 6, color: HAIR_BACK },
-    );
-  } else {
-    bodyBoxes.push(
-      { x: 11, y: 1, w: 10, h: 3, color: CAP },
-      { x: 11, y: 4, w: 11, h: 2, color: CAP_BILL },
-      { x: 12, y: 6, w: 8, h: 6, color: SKIN },
-    );
-  }
-
-  drawOutlined(g, bodyBoxes);
-
-  // shading details drawn after the outline pass, on top of the flat fills
-  rect(g, 9, 12, 14, 2, SHIRT_LIGHT);
-  rect(g, 9, 18, 14, 3, SHIRT_DARK);
-  rect(g, 11, 22, 10, 3, PANTS_DARK);
-
-  if (facing === "down") {
-    rect(g, 9, 10, 14, 1, CAP_DARK);
-    px(g, 12, 8, EYE);
-    px(g, 13, 8, EYE);
-    px(g, 18, 8, EYE);
-    px(g, 19, 8, EYE);
-    rect(g, 9, 10, 14, 1, SKIN_SHADE);
-  } else if (facing === "up") {
-    rect(g, 10, 3, 12, 1, CAP_DARK);
-  } else {
-    rect(g, 11, 3, 10, 1, CAP_DARK);
-    px(g, 17, 8, EYE);
-    px(g, 18, 8, EYE);
-  }
-
-  const shoeY = phase === 0 ? [24, 23] : [23, 24];
-  drawOutlined(g, [
-    { x: 10, y: shoeY[0], w: 5, h: 4, color: SHOE },
-    { x: 17, y: shoeY[1], w: 5, h: 4, color: SHOE },
-  ]);
-
-  finish(g, playerTextureKey(facing, phase));
-}
-
-export function generatePlayerTextures(scene: Phaser.Scene) {
-  const facings: PlayerFacing[] = ["down", "up", "side"];
-  for (const facing of facings) {
-    drawPlayerFrame(scene, facing, 0);
-    drawPlayerFrame(scene, facing, 1);
-  }
 }

@@ -1,14 +1,25 @@
 import Phaser from "phaser";
 import { MOVE_DURATION_MS, TILE_SIZE } from "./config";
 import type { TileCoord } from "./pathfinding";
-import { playerTextureKey, type PlayerFacing } from "./textures";
+
+export type PlayerFacing = "down" | "up" | "side";
+
+export const PLAYER_WALK_SHEET = "player-walk";
+export const PLAYER_IDLE_SHEET = "player-idle";
+
+export function walkAnimKey(facing: PlayerFacing): string {
+  return `walk-${facing}`;
+}
+
+export function idleAnimKey(facing: PlayerFacing): string {
+  return `idle-${facing}`;
+}
 
 /** Tile-grid character controller: walks a queued path one tile at a time. */
 export class Player {
   readonly sprite: Phaser.GameObjects.Sprite;
   tile: TileCoord;
   private facing: PlayerFacing = "down";
-  private flipX = false;
   private path: TileCoord[] = [];
   private moving = false;
   private readonly scene: Phaser.Scene;
@@ -17,8 +28,9 @@ export class Player {
     this.scene = scene;
     this.tile = { ...startTile };
     const worldPos = this.tileToWorld(startTile);
-    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, playerTextureKey("down", 0));
-    this.sprite.setOrigin(0.5, 0.6);
+    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, PLAYER_IDLE_SHEET, 0);
+    this.sprite.setOrigin(0.5, 0.81);
+    this.sprite.play(idleAnimKey("down"), true);
   }
 
   private tileToWorld(tile: TileCoord): { x: number; y: number } {
@@ -43,27 +55,22 @@ export class Player {
   private setFacing(dx: number, dy: number) {
     if (dx < 0) {
       this.facing = "side";
-      this.flipX = true;
+      this.sprite.setFlipX(true);
     } else if (dx > 0) {
       this.facing = "side";
-      this.flipX = false;
+      this.sprite.setFlipX(false);
     } else if (dy < 0) {
       this.facing = "up";
     } else if (dy > 0) {
       this.facing = "down";
     }
-    this.sprite.setFlipX(this.flipX);
-  }
-
-  private setFrame(phase: 0 | 1) {
-    this.sprite.setTexture(playerTextureKey(this.facing, phase));
   }
 
   private advance() {
     const next = this.path.shift();
     if (!next) {
       this.moving = false;
-      this.setFrame(0);
+      this.sprite.play(idleAnimKey(this.facing), true);
       return;
     }
 
@@ -71,18 +78,9 @@ export class Player {
     const dx = next.x - this.tile.x;
     const dy = next.y - this.tile.y;
     this.setFacing(dx, dy);
+    this.sprite.play(walkAnimKey(this.facing), true);
 
     const dest = this.tileToWorld(next);
-    let frameToggle: 0 | 1 = 1;
-    const walkTimer = this.scene.time.addEvent({
-      delay: MOVE_DURATION_MS / 2,
-      loop: true,
-      callback: () => {
-        this.setFrame(frameToggle);
-        frameToggle = frameToggle === 0 ? 1 : 0;
-      },
-    });
-
     this.scene.tweens.add({
       targets: this.sprite,
       x: dest.x,
@@ -90,7 +88,6 @@ export class Player {
       duration: MOVE_DURATION_MS,
       ease: "Linear",
       onComplete: () => {
-        walkTimer.remove();
         this.tile = { ...next };
         this.advance();
       },
