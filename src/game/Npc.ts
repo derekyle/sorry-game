@@ -7,15 +7,21 @@ import { townGrid } from "./townMap";
 export const NPC_WALK_SHEET = "npc-derek-walk";
 export const NPC_IDLE_SHEET = "npc-derek-idle";
 
-// Both sheets are a 3-row grid (side, up, down) - a different row order than
-// the player's own sheets (down, up, side) - with 6 walk frames and 4 idle
-// frames per row, same as the player's.
-const ROW_FOR_FACING: Record<PlayerFacing, number> = { side: 0, up: 1, down: 2 };
+// Both sheets are a 3-row grid, but the two were generated separately and
+// don't agree on row order: the walk sheet is (side, up, down), while the
+// idle sheet is (down, up, side) - matching the player's own convention.
+// 6 walk frames and 4 idle frames per row, same as the player's.
+const WALK_ROW_FOR_FACING: Record<PlayerFacing, number> = { side: 0, up: 1, down: 2 };
+const IDLE_ROW_FOR_FACING: Record<PlayerFacing, number> = { down: 0, up: 1, side: 2 };
 export const NPC_WALK_FRAMES_PER_ROW = 6;
 export const NPC_IDLE_FRAMES_PER_ROW = 4;
 
-export function npcRowForFacing(facing: PlayerFacing): number {
-  return ROW_FOR_FACING[facing];
+export function npcWalkRowForFacing(facing: PlayerFacing): number {
+  return WALK_ROW_FOR_FACING[facing];
+}
+
+export function npcIdleRowForFacing(facing: PlayerFacing): number {
+  return IDLE_ROW_FOR_FACING[facing];
 }
 
 export function npcWalkAnimKey(facing: PlayerFacing): string {
