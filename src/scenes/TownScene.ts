@@ -10,8 +10,27 @@ import {
 } from "../game/Player";
 import { findPath, isWalkable, type TileCoord } from "../game/pathfinding";
 import { generateTileTextures, GRASS_FRINGE_KEY, hasGrassFringe, textureKeyForTile } from "../game/textures";
-import { houseAnchors, NPC_HOME, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
-import { Npc, NPC_FRAMES_PER_ROW, NPC_SHEET, NPC_WALK_ANIM_KEY, NPC_WALK_ROW } from "../game/Npc";
+import { GIRL_HOME, houseAnchors, NPC_HOME, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
+import {
+  Npc,
+  npcIdleAnimKey,
+  npcRowForFacing,
+  npcWalkAnimKey,
+  NPC_IDLE_FRAMES_PER_ROW,
+  NPC_IDLE_SHEET,
+  NPC_WALK_FRAMES_PER_ROW,
+  NPC_WALK_SHEET,
+} from "../game/Npc";
+import {
+  Girl,
+  girlIdleAnimKey,
+  girlRowForFacing,
+  girlWalkAnimKey,
+  GIRL_IDLE_FRAMES_PER_ROW,
+  GIRL_IDLE_SHEET,
+  GIRL_WALK_FRAMES_PER_ROW,
+  GIRL_WALK_SHEET,
+} from "../game/Girl";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
 
@@ -42,6 +61,7 @@ const HOUSE_TILE_WIDTH = 4;
 export class TownScene extends Phaser.Scene {
   private player!: Player;
   private npc!: Npc;
+  private girl!: Girl;
   private music!: Phaser.Sound.BaseSound;
   private footstepGravel!: Sound;
   private footstepGrass!: Sound;
@@ -64,9 +84,21 @@ export class TownScene extends Phaser.Scene {
     this.load.image("tree", `${ASSET_BASE}tree.png`);
     this.load.image("house-a", `${ASSET_BASE}house-a.png`);
     this.load.image("house-b", `${ASSET_BASE}house-b.png`);
-    this.load.spritesheet(NPC_SHEET, `${ASSET_BASE}derek-sprite.png`, {
-      frameWidth: 512,
-      frameHeight: 512,
+    this.load.spritesheet(NPC_WALK_SHEET, `${ASSET_BASE}derek-walk.png`, {
+      frameWidth: 480,
+      frameHeight: 480,
+    });
+    this.load.spritesheet(NPC_IDLE_SHEET, `${ASSET_BASE}derek-idle.png`, {
+      frameWidth: 597,
+      frameHeight: 597,
+    });
+    this.load.spritesheet(GIRL_WALK_SHEET, `${ASSET_BASE}girl-walk.png`, {
+      frameWidth: 480,
+      frameHeight: 480,
+    });
+    this.load.spritesheet(GIRL_IDLE_SHEET, `${ASSET_BASE}girl-idle.png`, {
+      frameWidth: 597,
+      frameHeight: 597,
     });
     this.load.audio(THEME_MUSIC_KEY, `${ASSET_BASE}town-theme.mp3`);
     this.load.audio(FOOTSTEP_GRAVEL_KEY, `${ASSET_BASE}footsteps-gravel.mp3`);
@@ -76,6 +108,7 @@ export class TownScene extends Phaser.Scene {
   create() {
     this.createPlayerAnims();
     this.createNpcAnims();
+    this.createGirlAnims();
     this.buildMap();
     this.buildHouses();
     this.playThemeMusic();
@@ -86,6 +119,9 @@ export class TownScene extends Phaser.Scene {
 
     this.npc = new Npc(this, NPC_HOME);
     this.npc.sprite.setDepth((NPC_HOME.y + 1) * TILE_SIZE);
+
+    this.girl = new Girl(this, GIRL_HOME);
+    this.girl.sprite.setDepth((GIRL_HOME.y + 1) * TILE_SIZE);
 
     const worldWidth = MAP_WIDTH * TILE_SIZE;
     const worldHeight = MAP_HEIGHT * TILE_SIZE;
@@ -99,6 +135,7 @@ export class TownScene extends Phaser.Scene {
 
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
+    this.npc.sprite.setDepth(this.npc.sprite.y);
     this.updateFootstepSound();
   }
 
@@ -188,15 +225,55 @@ export class TownScene extends Phaser.Scene {
   }
 
   private createNpcAnims() {
-    this.anims.create({
-      key: NPC_WALK_ANIM_KEY,
-      frames: this.anims.generateFrameNumbers(NPC_SHEET, {
-        start: NPC_WALK_ROW * NPC_FRAMES_PER_ROW,
-        end: NPC_WALK_ROW * NPC_FRAMES_PER_ROW + (NPC_FRAMES_PER_ROW - 1),
-      }),
-      frameRate: 8,
-      repeat: -1,
-    });
+    const facings: PlayerFacing[] = ["down", "up", "side"];
+
+    for (const facing of facings) {
+      const row = npcRowForFacing(facing);
+      this.anims.create({
+        key: npcWalkAnimKey(facing),
+        frames: this.anims.generateFrameNumbers(NPC_WALK_SHEET, {
+          start: row * NPC_WALK_FRAMES_PER_ROW,
+          end: row * NPC_WALK_FRAMES_PER_ROW + (NPC_WALK_FRAMES_PER_ROW - 1),
+        }),
+        frameRate: 12,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: npcIdleAnimKey(facing),
+        frames: this.anims.generateFrameNumbers(NPC_IDLE_SHEET, {
+          start: row * NPC_IDLE_FRAMES_PER_ROW,
+          end: row * NPC_IDLE_FRAMES_PER_ROW + (NPC_IDLE_FRAMES_PER_ROW - 1),
+        }),
+        frameRate: 5,
+        repeat: -1,
+      });
+    }
+  }
+
+  private createGirlAnims() {
+    const facings: PlayerFacing[] = ["down", "up", "side"];
+
+    for (const facing of facings) {
+      const row = girlRowForFacing(facing);
+      this.anims.create({
+        key: girlWalkAnimKey(facing),
+        frames: this.anims.generateFrameNumbers(GIRL_WALK_SHEET, {
+          start: row * GIRL_WALK_FRAMES_PER_ROW,
+          end: row * GIRL_WALK_FRAMES_PER_ROW + (GIRL_WALK_FRAMES_PER_ROW - 1),
+        }),
+        frameRate: 12,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: girlIdleAnimKey(facing),
+        frames: this.anims.generateFrameNumbers(GIRL_IDLE_SHEET, {
+          start: row * GIRL_IDLE_FRAMES_PER_ROW,
+          end: row * GIRL_IDLE_FRAMES_PER_ROW + (GIRL_IDLE_FRAMES_PER_ROW - 1),
+        }),
+        frameRate: 5,
+        repeat: -1,
+      });
+    }
   }
 
   private buildMap() {

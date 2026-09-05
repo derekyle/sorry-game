@@ -1,41 +1,163 @@
 import Phaser from "phaser";
-import { TILE_SIZE } from "./config";
-import type { TileCoord } from "./pathfinding";
+import { MOVE_DURATION_MS, TILE_SIZE, TileType } from "./config";
+import type { PlayerFacing } from "./Player";
+import { findPath, type TileCoord } from "./pathfinding";
+import { townGrid } from "./townMap";
 
-export const NPC_SHEET = "npc-derek";
+export const NPC_WALK_SHEET = "npc-derek-walk";
+export const NPC_IDLE_SHEET = "npc-derek-idle";
 
-// The sheet is a 4x4 grid: each row is a facing (down, left, right, up) and
-// each column one frame of that facing's walk cycle. The NPC stays put and
-// always faces the camera, so only the down row's animation is used.
-export const NPC_WALK_ANIM_KEY = "npc-walk-down";
-export const NPC_WALK_ROW = 0;
-export const NPC_FRAMES_PER_ROW = 4;
+// Both sheets are a 3-row grid (side, up, down) - a different row order than
+// the player's own sheets (down, up, side) - with 6 walk frames and 4 idle
+// frames per row, same as the player's.
+const ROW_FOR_FACING: Record<PlayerFacing, number> = { side: 0, up: 1, down: 2 };
+export const NPC_WALK_FRAMES_PER_ROW = 6;
+export const NPC_IDLE_FRAMES_PER_ROW = 4;
 
-// The character art within each 512x512 frame leaves far less margin than
-// the player's 32x32 sheet does (its drawn body fills ~87% of the frame
-// height vs. the player's ~59%), so matching *frame* size would render the
-// NPC visibly taller than the player. Scaling down by that ratio instead
-// matches their drawn height on screen. The origin is pinned to the bottom
-// of the drawn body (not the frame) so its feet still land on the tile's
-// bottom edge, same as Player.
-const NPC_CONTENT_HEIGHT_FRACTION = 448 / 512;
-const PLAYER_CONTENT_HEIGHT_FRACTION = 19 / 32;
-const NPC_DISPLAY_SIZE = TILE_SIZE * (PLAYER_CONTENT_HEIGHT_FRACTION / NPC_CONTENT_HEIGHT_FRACTION);
-const NPC_ORIGIN_Y = 480 / 512;
+export function npcRowForFacing(facing: PlayerFacing): number {
+  return ROW_FOR_FACING[facing];
+}
 
-/** A stationary NPC that plays a walk-in-place animation, like a townsperson chatting. */
+export function npcWalkAnimKey(facing: PlayerFacing): string {
+  return `npc-walk-${facing}`;
+}
+
+export function npcIdleAnimKey(facing: PlayerFacing): string {
+  return `npc-idle-${facing}`;
+}
+
+// The walk and idle sheets were generated separately at different native
+// resolutions (480px vs 597px frames), so a single fixed scale would make
+// the NPC visibly change size when it switches between them. Scaling each
+// to TILE_SIZE individually keeps it a consistent size on screen, matching
+// the player's own on-screen size (its frames are already tile-sized).
+const NPC_WALK_FRAME_SIZE = 480;
+const NPC_IDLE_FRAME_SIZE = 597;
+const NPC_WALK_SCALE = TILE_SIZE / NPC_WALK_FRAME_SIZE;
+const NPC_IDLE_SCALE = TILE_SIZE / NPC_IDLE_FRAME_SIZE;
+
+const WANDER_RADIUS = 3;
+const MIN_PAUSE_MS = 1500;
+const MAX_PAUSE_MS = 4000;
+const WANDERABLE_TILES = new Set<TileType>([TileType.Grass, TileType.GrassAlt, TileType.Flower]);
+
+/** Tile-grid NPC that idles, then strolls to a random nearby grass tile, on repeat. */
 export class Npc {
   readonly sprite: Phaser.GameObjects.Sprite;
+  tile: TileCoord;
+  private readonly home: TileCoord;
+  private facing: PlayerFacing = "down";
+  private path: TileCoord[] = [];
+  private moving = false;
+  private readonly scene: Phaser.Scene;
 
-  constructor(scene: Phaser.Scene, tile: TileCoord) {
-    // Anchored to the tile's bottom edge, matching Player's convention, so
-    // depth sorting against the grass fringe and buildings lines up.
-    const x = tile.x * TILE_SIZE + TILE_SIZE / 2;
-    const y = (tile.y + 1) * TILE_SIZE;
+  constructor(scene: Phaser.Scene, homeTile: TileCoord) {
+    this.scene = scene;
+    this.tile = { ...homeTile };
+    this.home = { ...homeTile };
+    const worldPos = this.tileToWorld(homeTile);
 
-    this.sprite = scene.add.sprite(x, y, NPC_SHEET, NPC_WALK_ROW * NPC_FRAMES_PER_ROW);
-    this.sprite.setOrigin(0.5, NPC_ORIGIN_Y);
-    this.sprite.setDisplaySize(NPC_DISPLAY_SIZE, NPC_DISPLAY_SIZE);
-    this.sprite.play(NPC_WALK_ANIM_KEY, true);
+    this.sprite = scene.add.sprite(worldPos.x, worldPos.y, NPC_IDLE_SHEET, 0);
+    this.sprite.setOrigin(0.5, 0.81);
+    this.playIdle();
+    this.scheduleNextWander();
+  }
+
+  // Anchored to the tile's bottom edge, matching Player's convention, so
+  // depth sorting against the grass fringe and buildings lines up.
+  private tileToWorld(tile: TileCoord): { x: number; y: number } {
+    return {
+      x: tile.x * TILE_SIZE + TILE_SIZE / 2,
+      y: (tile.y + 1) * TILE_SIZE,
+    };
+  }
+
+  get isMoving(): boolean {
+    return this.moving;
+  }
+
+  private scheduleNextWander() {
+    const delay = Phaser.Math.Between(MIN_PAUSE_MS, MAX_PAUSE_MS);
+    this.scene.time.delayedCall(delay, () => this.wanderStep());
+  }
+
+  private wanderStep() {
+    const target = this.pickWanderTarget();
+    const path = target && findPath(townGrid, this.tile, target);
+    if (!path || path.length === 0) {
+      this.scheduleNextWander();
+      return;
+    }
+
+    this.path = path;
+    this.advance();
+  }
+
+  private pickWanderTarget(): TileCoord | null {
+    const candidates: TileCoord[] = [];
+    for (let dy = -WANDER_RADIUS; dy <= WANDER_RADIUS; dy++) {
+      for (let dx = -WANDER_RADIUS; dx <= WANDER_RADIUS; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const x = this.home.x + dx;
+        const y = this.home.y + dy;
+        if (WANDERABLE_TILES.has(townGrid[y]?.[x])) {
+          candidates.push({ x, y });
+        }
+      }
+    }
+    return candidates.length > 0 ? Phaser.Utils.Array.GetRandom(candidates) : null;
+  }
+
+  private playIdle() {
+    this.sprite.setScale(NPC_IDLE_SCALE);
+    this.sprite.play(npcIdleAnimKey(this.facing), true);
+  }
+
+  private playWalk() {
+    this.sprite.setScale(NPC_WALK_SCALE);
+    this.sprite.play(npcWalkAnimKey(this.facing), true);
+  }
+
+  private setFacing(dx: number, dy: number) {
+    if (dx < 0) {
+      this.facing = "side";
+      this.sprite.setFlipX(true);
+    } else if (dx > 0) {
+      this.facing = "side";
+      this.sprite.setFlipX(false);
+    } else if (dy < 0) {
+      this.facing = "up";
+    } else if (dy > 0) {
+      this.facing = "down";
+    }
+  }
+
+  private advance() {
+    const next = this.path.shift();
+    if (!next) {
+      this.moving = false;
+      this.playIdle();
+      this.scheduleNextWander();
+      return;
+    }
+
+    this.moving = true;
+    const dx = next.x - this.tile.x;
+    const dy = next.y - this.tile.y;
+    this.setFacing(dx, dy);
+    this.playWalk();
+
+    const dest = this.tileToWorld(next);
+    this.scene.tweens.add({
+      targets: this.sprite,
+      x: dest.x,
+      y: dest.y,
+      duration: MOVE_DURATION_MS,
+      ease: "Linear",
+      onComplete: () => {
+        this.tile = { ...next };
+        this.advance();
+      },
+    });
   }
 }
