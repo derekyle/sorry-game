@@ -9,7 +9,7 @@ import {
   type PlayerFacing,
 } from "../game/Player";
 import { findPath, isWalkable, type TileCoord } from "../game/pathfinding";
-import { generateTileTextures, textureKeyForTile } from "../game/textures";
+import { generateTileTextures, GRASS_FRINGE_KEY, hasGrassFringe, textureKeyForTile } from "../game/textures";
 import { houseAnchors, PLAYER_START, townGrid, type HouseVariant } from "../game/townMap";
 
 const GROUND_DEPTH = -1000;
@@ -111,6 +111,16 @@ export class TownScene extends Phaser.Scene {
           const tree = this.add.image(x * TILE_SIZE + TILE_SIZE / 2, (y + 1) * TILE_SIZE, "tree");
           tree.setOrigin(0.5, 1);
           tree.setDepth((y + 1) * TILE_SIZE);
+        }
+
+        if (hasGrassFringe(tile)) {
+          // Depth is the tile's bottom edge plus a hair, so a player
+          // standing exactly on this tile (whose depth is also that bottom
+          // edge, per Player's tile-bottom anchor) reliably renders behind
+          // the blades instead of depending on insertion-order tie-breaking.
+          const fringe = this.add.image(x * TILE_SIZE, y * TILE_SIZE, GRASS_FRINGE_KEY);
+          fringe.setOrigin(0, 0);
+          fringe.setDepth((y + 1) * TILE_SIZE + 1);
         }
       }
     }
