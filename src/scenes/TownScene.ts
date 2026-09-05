@@ -34,6 +34,7 @@ import {
 } from "../game/Girl";
 import { TITLE_DISMISSED_EVENT } from "../game/events";
 import { TITLE_SPLASH_FADE_MS } from "../ui/titleSplash";
+import { showDialog, type ScreenPoint, type DialogSession } from "../ui/dialog";
 
 const GROUND_DEPTH = -1000;
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
@@ -59,6 +60,12 @@ type Sound = Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.
 // how far the roof rises above the footprint.
 const HOUSE_TILE_WIDTH = 4;
 
+const GIRL_GREETING = "Oh, hi... you must be Naigle... it's nice to meet you. Are you looking for Derek?";
+const GIRL_GREETING_CHOICES = [
+  { text: "Nope, don't know who that is, don't care." },
+  { text: "Ya, where is he? I'm gonna beat him up." },
+];
+
 export class TownScene extends Phaser.Scene {
   private player!: Player;
   private npc!: Npc;
@@ -67,6 +74,8 @@ export class TownScene extends Phaser.Scene {
   private footstepGravel!: Sound;
   private footstepGrass!: Sound;
   private activeFootstepSound: Sound | null = null;
+  private dialogSession: DialogSession | null = null;
+  private nearGirl = false;
 
   constructor() {
     super("TownScene");
@@ -137,6 +146,58 @@ export class TownScene extends Phaser.Scene {
   update() {
     this.player.sprite.setDepth(this.player.sprite.y);
     this.updateFootstepSound();
+    this.updateGirlDialog();
+  }
+
+  private updateGirlDialog() {
+    if (this.dialogSession) {
+      this.dialogSession.updateNpcAnchor(this.toScreenAnchor(this.girl.sprite));
+      if (!this.dialogSession.active) this.dialogSession = null;
+      return;
+    }
+
+    const dx = Math.abs(this.player.tile.x - GIRL_HOME.x);
+    const dy = Math.abs(this.player.tile.y - GIRL_HOME.y);
+    const adjacent = dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
+
+    if (adjacent && !this.nearGirl) {
+      this.startGirlDialog();
+    }
+    this.nearGirl = adjacent;
+  }
+
+  private toScreenAnchor(sprite: Phaser.GameObjects.Sprite): ScreenPoint {
+    const cam = this.cameras.main;
+    return {
+      x: (sprite.x - cam.worldView.x) * cam.zoom,
+      y: (sprite.y - sprite.displayHeight - cam.worldView.y) * cam.zoom,
+    };
+  }
+
+  private startGirlDialog() {
+    this.dialogSession = showDialog({
+      npcMessage: GIRL_GREETING,
+      choices: GIRL_GREETING_CHOICES,
+      onCharacterRevealed: () => this.playDialogBlip(),
+    });
+  }
+
+  private playDialogBlip() {
+    const soundManager = this.sound;
+    if (!(soundManager instanceof Phaser.Sound.WebAudioSoundManager)) return;
+
+    const ctx = soundManager.context;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(520 + Math.random() * 60, ctx.currentTime);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    oscillator.connect(gain).connect(soundManager.masterVolumeNode);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.05);
   }
 
   private playThemeMusic() {
@@ -325,7 +386,7 @@ export class TownScene extends Phaser.Scene {
   }
 
   private handleTap(pointer: Phaser.Input.Pointer) {
-    if (this.player.isMoving) return;
+    if (this.player.isMoving || this.dialogSession) return;
 
     const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
     const targetTile: TileCoord = {
@@ -334,6 +395,7 @@ export class TownScene extends Phaser.Scene {
     };
 
     if (!isWalkable(townGrid, targetTile.x, targetTile.y)) return;
+    if (targetTile.x === GIRL_HOME.x && targetTile.y === GIRL_HOME.y) return;
 
     const path = findPath(townGrid, this.player.tile, targetTile);
     if (!path || path.length === 0) return;
